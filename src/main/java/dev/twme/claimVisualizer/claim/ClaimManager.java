@@ -26,11 +26,30 @@ public class ClaimManager {
     }
     
     /**
+     * 檢查世界是否啟用 GriefDefender
+     */
+    public boolean isWorldEnabled(World world) {
+        if (world == null) return false;
+        
+        try {
+            return GriefDefender.getCore().isEnabled(world.getUID());
+        } catch (Exception e) {
+            plugin.getLogger().warning("檢查世界 " + world.getName() + " 是否啟用 GriefDefender 時發生錯誤: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * 取得玩家周圍的領地
      */
     public Set<ClaimBoundary> getNearbyClaims(Player player) {
         World world = player.getWorld();
         UUID worldUUID = world.getUID();
+        
+        // 檢查世界是否啟用 GriefDefender
+        if (!isWorldEnabled(world)) {
+            return new HashSet<>();
+        }
         
         // 檢查快取是否需要更新
         long currentTime = System.currentTimeMillis();
@@ -90,6 +109,11 @@ public class ClaimManager {
     }
     
     private void updateClaimCache(World world) {
+        // 檢查世界是否啟用 GriefDefender
+        if (!isWorldEnabled(world)) {
+            return;
+        }
+        
         UUID worldUUID = world.getUID();
         Map<UUID, ClaimBoundary> worldClaims = new HashMap<>();
         

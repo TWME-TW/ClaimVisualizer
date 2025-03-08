@@ -47,6 +47,11 @@ public class EventListener implements Listener {
             return;
         }
         
+        // 檢查該世界是否支援 GriefDefender
+        if (!plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
+            return;
+        }
+        
         PlayerSession session = PlayerSession.getSession(event.getPlayer());
         
         // 確認玩家已啟用視覺化，並有權限
@@ -73,6 +78,11 @@ public class EventListener implements Listener {
 
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
+        // 檢查目標世界是否支援 GriefDefender
+        if (!plugin.getClaimManager().isWorldEnabled(event.getTo().getWorld())) {
+            return;
+        }
+        
         PlayerSession session = PlayerSession.getSession(event.getPlayer());
         
         // 確認玩家已啟用視覺化，並有權限
