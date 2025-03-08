@@ -81,7 +81,7 @@ public class ParticleRenderer {
         double spacing = configManager.getParticleSpacing();
         ConfigManager.DisplayMode mode = configManager.getDisplayMode();
         
-        // 獲取玩家當前高度
+        // 獲取玩家當前高度，用於確定顯示哪些粒子
         int playerY = player.getLocation().getBlockY();
         
         for (ClaimBoundary claim : claims) {
@@ -92,7 +92,6 @@ public class ParticleRenderer {
             if (mode == ConfigManager.DisplayMode.CORNERS) {
                 points = claim.getCornerPoints(5, playerY);
             } else {
-                // OUTLINE 和 FULL 模式都使用玩家高度
                 points = claim.getOutlinePoints(spacing, playerY);
             }
             

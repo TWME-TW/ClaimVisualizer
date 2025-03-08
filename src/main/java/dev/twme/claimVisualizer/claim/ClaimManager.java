@@ -133,36 +133,20 @@ public class ClaimManager {
                 type = "subdivision";
             }
             
-            // 建立邊界物件
+            // 建立邊界物件 - 獲取完整的 3D 座標
             int minX = claim.getLesserBoundaryCorner().getX();
+            int minY = claim.getLesserBoundaryCorner().getY();
             int minZ = claim.getLesserBoundaryCorner().getZ();
             int maxX = claim.getGreaterBoundaryCorner().getX();
+            int maxY = claim.getGreaterBoundaryCorner().getY();
             int maxZ = claim.getGreaterBoundaryCorner().getZ();
-            int y = calculateYLevel(world, minX, maxX, minZ, maxZ);
             
-            ClaimBoundary boundary = new ClaimBoundary(claimId, ownerId, type, world, minX, y, minZ, maxX, y, maxZ);
+            ClaimBoundary boundary = new ClaimBoundary(claimId, ownerId, type, world, minX, minY, minZ, maxX, maxY, maxZ);
             worldClaims.put(claimId, boundary);
         }
         
         claimCache.put(worldUUID, worldClaims);
         lastCacheUpdateTime.put(worldUUID, System.currentTimeMillis());
-    }
-    
-    private int calculateYLevel(World world, int minX, int maxX, int minZ, int maxZ) {
-        // 計算領地中心點位置
-        int centerX = (minX + maxX) / 2;
-        int centerZ = (minZ + maxZ) / 2;
-        
-        // 從最高層開始往下找到第一個非空氣方塊
-        int y = world.getMaxHeight();
-        while (y > world.getMinHeight()) {
-            if (!world.getBlockAt(centerX, y, centerZ).getType().isAir()) {
-                break;
-            }
-            y--;
-        }
-        
-        return y + 1; // 回傳表面上方一格
     }
         
     /**
