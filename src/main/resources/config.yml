@@ -1,0 +1,61 @@
+# ClaimVisualizer 配置檔案
+
+# 粒子設定
+particles:
+  # 更新頻率 (單位：刻)
+  update-interval: 10
+  # 渲染距離 (單位：方塊)
+  render-distance: 30
+  # 粒子間隔 (單位：方塊)
+  spacing: 0.5
+  # 粒子顯示高度 (相對於地面)
+  height: 1.0
+  
+# 不同類型領地的粒子設定
+claim-types:
+  admin:
+    particle: REDSTONE
+    color: 
+      red: 255
+      green: 0
+      blue: 0
+  basic:
+    particle: REDSTONE
+    color:
+      red: 0
+      green: 255
+      blue: 0
+  subdivision:
+    particle: REDSTONE
+    color:
+      red: 0
+      green: 0
+      blue: 255
+  town:
+    particle: REDSTONE
+    color:
+      red: 255
+      green: 255
+      blue: 0
+
+# 性能設定
+performance:
+  # 最大同時渲染的領地數量
+  max-claims: 20
+  # 使用非同步渲染
+  async-rendering: true
+  # 快取時間 (單位：秒)
+  cache-time: 30
+
+# 顯示設定  
+display:
+  # 顯示模式: CORNERS (僅角落), OUTLINE (僅輪廓), FULL (完整邊界)
+  mode: OUTLINE
+  # 顯示自己的領地
+  show-own-claims: true
+  # 顯示他人的領地
+  show-others-claims: true
+  # 顯示管理員領地
+  show-admin-claims: true
+  # 顯示城鎮領地
+  show-town-claims: true
