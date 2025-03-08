@@ -81,15 +81,19 @@ public class ParticleRenderer {
         double spacing = configManager.getParticleSpacing();
         ConfigManager.DisplayMode mode = configManager.getDisplayMode();
         
+        // 獲取玩家當前高度
+        int playerY = player.getLocation().getBlockY();
+        
         for (ClaimBoundary claim : claims) {
             ConfigManager.ParticleSettings particleSettings = 
                     configManager.getParticleSettings(claim.getType());
             
             List<Location> points;
             if (mode == ConfigManager.DisplayMode.CORNERS) {
-                points = claim.getCornerPoints(5);
+                points = claim.getCornerPoints(5, playerY);
             } else {
-                points = claim.getOutlinePoints(spacing);
+                // OUTLINE 和 FULL 模式都使用玩家高度
+                points = claim.getOutlinePoints(spacing, playerY);
             }
             
             for (Location loc : points) {
@@ -110,6 +114,9 @@ public class ParticleRenderer {
                 double spacing = configManager.getParticleSpacing();
                 ConfigManager.DisplayMode mode = configManager.getDisplayMode();
                 
+                // 獲取玩家當前高度
+                int playerY = player.getLocation().getBlockY();
+                
                 List<ParticleData> particleData = new ArrayList<>();
                 
                 for (ClaimBoundary claim : claims) {
@@ -118,9 +125,10 @@ public class ParticleRenderer {
                     
                     List<Location> points;
                     if (mode == ConfigManager.DisplayMode.CORNERS) {
-                        points = claim.getCornerPoints(5);
+                        points = claim.getCornerPoints(5, playerY);
                     } else {
-                        points = claim.getOutlinePoints(spacing);
+                        // OUTLINE 和 FULL 模式都使用玩家高度
+                        points = claim.getOutlinePoints(spacing, playerY);
                     }
                     
                     for (Location loc : points) {

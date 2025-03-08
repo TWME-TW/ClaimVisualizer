@@ -87,10 +87,17 @@ public class ClaimBoundary {
      * 獲取邊界線上的點，用於繪製粒子
      */
     public List<Location> getOutlinePoints(double spacing) {
+        return getOutlinePoints(spacing, minY + 1);
+    }
+
+    /**
+     * 獲取邊界線上的點，用於繪製粒子，根據指定的高度
+     */
+    public List<Location> getOutlinePoints(double spacing, int displayHeight) {
         List<Location> points = new ArrayList<>();
         
-        // 計算粒子間隔
-        int y = minY + 1; // 在地表上方一格
+        // 確保高度不超出領地範圍
+        int y = Math.min(Math.max(displayHeight, minY), maxY);
         
         // 南北兩條線
         for (double x = minX; x <= maxX; x += spacing) {
@@ -111,8 +118,17 @@ public class ClaimBoundary {
      * 只獲取角落點，用於角落顯示模式
      */
     public List<Location> getCornerPoints(int cornerSize) {
+        return getCornerPoints(cornerSize, minY + 1);
+    }
+    
+    /**
+     * 只獲取角落點，用於角落顯示模式，根據指定的高度
+     */
+    public List<Location> getCornerPoints(int cornerSize, int displayHeight) {
         List<Location> points = new ArrayList<>();
-        int y = minY + 1;
+        
+        // 確保高度不超出領地範圍
+        int y = Math.min(Math.max(displayHeight, minY), maxY);
         
         // 西南角
         for (int x = minX; x < minX + cornerSize && x <= maxX; x++) {
