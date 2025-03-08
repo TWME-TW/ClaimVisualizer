@@ -3,7 +3,7 @@ package dev.twme.claimVisualizer.listener;
 import dev.twme.claimVisualizer.ClaimVisualizer;
 import dev.twme.claimVisualizer.player.PlayerSession;
 import dev.twme.claimVisualizer.render.ParticleRenderer;
-
+import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -40,6 +40,12 @@ public class EventListener implements Listener {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
                     renderer.renderClaims(event.getPlayer());
+                    
+                    // 發送提示訊息
+                    event.getPlayer().sendMessage(ChatColor.GREEN + "已自動啟用領地視覺化效果！");
+                    event.getPlayer().sendMessage(ChatColor.YELLOW + "使用 " + ChatColor.WHITE + "/claimvisual" + 
+                                                  ChatColor.YELLOW + " 或 " + ChatColor.WHITE + "/cv" + 
+                                                  ChatColor.YELLOW + " 可切換此功能的開關狀態。");
                 }
             }, 20L); // 20 ticks = 1秒
         }
