@@ -29,7 +29,20 @@ public class EventListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         // 初始化玩家會話
-        PlayerSession.getSession(event.getPlayer());
+        PlayerSession session = PlayerSession.getSession(event.getPlayer());
+        
+        // 檢查玩家是否有自動啟用視覺化的權限
+        if (event.getPlayer().hasPermission("claimvisualizer.autoenable") && 
+            event.getPlayer().hasPermission("claimvisualizer.use")) {
+            session.setVisualizationEnabled(true);
+            
+            // 延遲1秒後渲染領地，確保玩家已完全載入
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
+                    renderer.renderClaims(event.getPlayer());
+                }
+            }, 20L); // 20 ticks = 1秒
+        }
     }
 
     @EventHandler

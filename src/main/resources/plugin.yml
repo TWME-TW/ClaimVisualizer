@@ -17,3 +17,6 @@ permissions:
   claimvisualizer.reload:
     description: 允許重新載入插件配置
     default: op
+  claimvisualizer.autoenable:
+    description: 登入伺服器時自動啟用領地視覺化效果
+    default: false

@@ -27,7 +27,8 @@ public class ConfigManager {
     private boolean showAdminClaims;
     private boolean showTownClaims;
     
-    private final Map<String, ParticleSettings> claimTypeParticles = new HashMap<>();
+    // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
+    private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
 
     public ConfigManager(ClaimVisualizer plugin) {
         this.plugin = plugin;
@@ -69,18 +70,42 @@ public class ConfigManager {
         if (typeSection == null) return;
         
         for (String claimType : typeSection.getKeys(false)) {
-            ConfigurationSection section = typeSection.getConfigurationSection(claimType);
-            if (section == null) continue;
+            ConfigurationSection typeConfigSection = typeSection.getConfigurationSection(claimType);
+            if (typeConfigSection == null) continue;
             
-            String particleName = section.getString("particle", "REDSTONE");
-            Particle particle = Particle.valueOf(particleName);
+            Map<ClaimPart, ParticleSettings> partSettings = new HashMap<>();
             
-            int red = section.getInt("color.red", 255);
-            int green = section.getInt("color.green", 255);
-            int blue = section.getInt("color.blue", 255);
-            Color color = Color.fromRGB(red, green, blue);
+            // 載入每個部分的粒子設定
+            for (ClaimPart part : ClaimPart.values()) {
+                ConfigurationSection partSection = typeConfigSection.getConfigurationSection(part.getConfigKey());
+                
+                // 如果找不到特定部分的設定，則使用舊格式或預設值
+                if (partSection == null) {
+                    // 嘗試使用舊格式的設定
+                    String particleName = typeConfigSection.getString("particle", "REDSTONE");
+                    Particle particle = Particle.valueOf(particleName);
+                    
+                    int red = typeConfigSection.getInt("color.red", 255);
+                    int green = typeConfigSection.getInt("color.green", 255);
+                    int blue = typeConfigSection.getInt("color.blue", 255);
+                    Color color = Color.fromRGB(red, green, blue);
+                    
+                    partSettings.put(part, new ParticleSettings(particle, color));
+                } else {
+                    // 使用新格式的設定
+                    String particleName = partSection.getString("particle", "REDSTONE");
+                    Particle particle = Particle.valueOf(particleName);
+                    
+                    int red = partSection.getInt("color.red", 255);
+                    int green = partSection.getInt("color.green", 255);
+                    int blue = partSection.getInt("color.blue", 255);
+                    Color color = Color.fromRGB(red, green, blue);
+                    
+                    partSettings.put(part, new ParticleSettings(particle, color));
+                }
+            }
             
-            claimTypeParticles.put(claimType, new ParticleSettings(particle, color));
+            claimTypeParticles.put(claimType, partSettings);
         }
     }
     
@@ -132,13 +157,49 @@ public class ConfigManager {
         return showTownClaims;
     }
     
+    /**
+     * 獲取特定領地類型和部分的粒子設定
+     */
+    public ParticleSettings getParticleSettings(String claimType, ClaimPart part) {
+        Map<ClaimPart, ParticleSettings> partSettings = claimTypeParticles.get(claimType);
+        
+        if (partSettings != null && partSettings.containsKey(part)) {
+            return partSettings.get(part);
+        }
+        
+        // 默認設定
+        return new ParticleSettings(Particle.DUST, Color.WHITE);
+    }
+    
+    /**
+     * 向下相容的方法
+     */
     public ParticleSettings getParticleSettings(String claimType) {
-        return claimTypeParticles.getOrDefault(claimType, 
-                new ParticleSettings(Particle.DUST, Color.WHITE));
+        return getParticleSettings(claimType, ClaimPart.BOTTOM);
     }
     
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL
+    }
+    
+    /**
+     * 領地的不同部分
+     */
+    public enum ClaimPart {
+        BOTTOM("bottom"),   // 底部邊框
+        TOP("top"),         // 頂部邊框
+        HORIZONTAL("horizontal"), // 玩家所在高度的水平線
+        VERTICAL("vertical");     // 垂直連接線
+        
+        private final String configKey;
+        
+        ClaimPart(String configKey) {
+            this.configKey = configKey;
+        }
+        
+        public String getConfigKey() {
+            return configKey;
+        }
     }
     
     public static class ParticleSettings {

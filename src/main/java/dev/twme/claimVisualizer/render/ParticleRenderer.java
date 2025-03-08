@@ -85,19 +85,28 @@ public class ParticleRenderer {
         int playerY = player.getLocation().getBlockY();
         
         for (ClaimBoundary claim : claims) {
-            ConfigManager.ParticleSettings particleSettings = 
-                    configManager.getParticleSettings(claim.getType());
-            
-            List<Location> points;
             if (mode == ConfigManager.DisplayMode.CORNERS) {
-                points = claim.getCornerPoints(5, playerY);
+                // 角落模式使用舊的邏輯，但使用頂部的粒子設定
+                ConfigManager.ParticleSettings particleSettings = 
+                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                
+                List<Location> points = claim.getCornerPoints(5, playerY);
+                for (Location loc : points) {
+                    spawnParticle(player, particleSettings.getParticle(), 
+                            loc, particleSettings.getColor());
+                }
             } else {
-                points = claim.getOutlinePoints(spacing, playerY);
-            }
-            
-            for (Location loc : points) {
-                spawnParticle(player, particleSettings.getParticle(), 
-                        loc, particleSettings.getColor());
+                // OUTLINE 和 FULL 模式使用新的邏輯，為每個部分使用不同粒子設定
+                for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
+                    ConfigManager.ParticleSettings particleSettings = 
+                            configManager.getParticleSettings(claim.getType(), part);
+                    
+                    List<Location> points = claim.getPointsForPart(part, spacing, playerY);
+                    for (Location loc : points) {
+                        spawnParticle(player, particleSettings.getParticle(), 
+                                loc, particleSettings.getColor());
+                    }
+                }
             }
         }
     }
@@ -119,20 +128,28 @@ public class ParticleRenderer {
                 List<ParticleData> particleData = new ArrayList<>();
                 
                 for (ClaimBoundary claim : claims) {
-                    ConfigManager.ParticleSettings particleSettings = 
-                            configManager.getParticleSettings(claim.getType());
-                    
-                    List<Location> points;
                     if (mode == ConfigManager.DisplayMode.CORNERS) {
-                        points = claim.getCornerPoints(5, playerY);
+                        // 角落模式使用舊的邏輯，但使用頂部的粒子設定
+                        ConfigManager.ParticleSettings particleSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                        
+                        List<Location> points = claim.getCornerPoints(5, playerY);
+                        for (Location loc : points) {
+                            particleData.add(new ParticleData(particleSettings.getParticle(), 
+                                    loc, particleSettings.getColor()));
+                        }
                     } else {
-                        // OUTLINE 和 FULL 模式都使用玩家高度
-                        points = claim.getOutlinePoints(spacing, playerY);
-                    }
-                    
-                    for (Location loc : points) {
-                        particleData.add(new ParticleData(particleSettings.getParticle(), 
-                                loc, particleSettings.getColor()));
+                        // OUTLINE 和 FULL 模式使用新的邏輯，為每個部分使用不同粒子設定
+                        for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
+                            ConfigManager.ParticleSettings particleSettings = 
+                                    configManager.getParticleSettings(claim.getType(), part);
+                            
+                            List<Location> points = claim.getPointsForPart(part, spacing, playerY);
+                            for (Location loc : points) {
+                                particleData.add(new ParticleData(particleSettings.getParticle(), 
+                                        loc, particleSettings.getColor()));
+                            }
+                        }
                     }
                 }
                 

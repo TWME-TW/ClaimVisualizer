@@ -1,5 +1,6 @@
 package dev.twme.claimVisualizer.claim;
 
+import dev.twme.claimVisualizer.config.ConfigManager;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -84,22 +85,11 @@ public class ClaimBoundary {
     }
     
     /**
-     * 獲取邊界線上的點，用於繪製粒子
+     * 獲取底部邊框的點
      */
-    public List<Location> getOutlinePoints(double spacing) {
-        return getOutlinePoints(spacing, minY + 1);
-    }
-
-    /**
-     * 獲取邊界線上的點，用於繪製粒子，根據顯示模式考慮 3D 邊界
-     */
-    public List<Location> getOutlinePoints(double spacing, int displayHeight) {
+    public List<Location> getBottomPoints(double spacing) {
         List<Location> points = new ArrayList<>();
         
-        // 根據玩家位置決定顯示哪個水平面
-        int playerY = Math.min(Math.max(displayHeight, minY), maxY);
-        
-        // 底部邊框 (minY)
         // 南北兩條線
         for (double x = minX; x <= maxX; x += spacing) {
             points.add(new Location(world, x, minY, minZ));
@@ -112,7 +102,15 @@ public class ClaimBoundary {
             points.add(new Location(world, maxX, minY, z));
         }
         
-        // 頂部邊框 (maxY)
+        return points;
+    }
+    
+    /**
+     * 獲取頂部邊框的點
+     */
+    public List<Location> getTopPoints(double spacing) {
+        List<Location> points = new ArrayList<>();
+        
         // 南北兩條線
         for (double x = minX; x <= maxX; x += spacing) {
             points.add(new Location(world, x, maxY, minZ));
@@ -125,22 +123,44 @@ public class ClaimBoundary {
             points.add(new Location(world, maxX, maxY, z));
         }
         
-        // 玩家所在高度的水平輪廓線 (如果不是底部或頂部)
-        if (playerY != minY && playerY != maxY) {
-            // 南北兩條線
-            for (double x = minX; x <= maxX; x += spacing) {
-                points.add(new Location(world, x, playerY, minZ));
-                points.add(new Location(world, x, playerY, maxZ));
-            }
-            
-            // 東西兩條線
-            for (double z = minZ; z <= maxZ; z += spacing) {
-                points.add(new Location(world, minX, playerY, z));
-                points.add(new Location(world, maxX, playerY, z));
-            }
+        return points;
+    }
+    
+    /**
+     * 獲取玩家所在高度的水平線點
+     */
+    public List<Location> getHorizontalPoints(double spacing, int playerY) {
+        List<Location> points = new ArrayList<>();
+        
+        // 確保在領地邊界高度範圍內
+        int displayY = Math.min(Math.max(playerY, minY), maxY);
+        
+        // 如果是頂部或底部，則不必重複渲染
+        if (displayY == minY || displayY == maxY) {
+            return points;
         }
         
-        // 垂直連接線
+        // 南北兩條線
+        for (double x = minX; x <= maxX; x += spacing) {
+            points.add(new Location(world, x, displayY, minZ));
+            points.add(new Location(world, x, displayY, maxZ));
+        }
+        
+        // 東西兩條線
+        for (double z = minZ; z <= maxZ; z += spacing) {
+            points.add(new Location(world, minX, displayY, z));
+            points.add(new Location(world, maxX, displayY, z));
+        }
+        
+        return points;
+    }
+    
+    /**
+     * 獲取垂直連接線的點
+     */
+    public List<Location> getVerticalPoints(double spacing) {
+        List<Location> points = new ArrayList<>();
+        
         // 四個角落的垂直線
         for (double y = minY; y <= maxY; y += spacing) {
             // 西南角
@@ -154,6 +174,40 @@ public class ClaimBoundary {
         }
         
         return points;
+    }
+    
+    /**
+     * 獲取邊界線上的點，用於繪製粒子
+     */
+    public List<Location> getOutlinePoints(double spacing) {
+        return getOutlinePoints(spacing, minY + 1);
+    }
+
+    /**
+     * 獲取邊界線上的點，用於繪製粒子，根據顯示模式考慮 3D 邊界
+     */
+    public List<Location> getOutlinePoints(double spacing, int displayHeight) {
+        List<Location> points = new ArrayList<>();
+        
+        // 結合所有部分的點
+        points.addAll(getBottomPoints(spacing));
+        points.addAll(getTopPoints(spacing));
+        points.addAll(getHorizontalPoints(spacing, displayHeight));
+        points.addAll(getVerticalPoints(spacing));
+        
+        return points;
+    }
+    
+    /**
+     * 獲取特定部分的點
+     */
+    public List<Location> getPointsForPart(ConfigManager.ClaimPart part, double spacing, int displayHeight) {
+        return switch (part) {
+            case BOTTOM -> getBottomPoints(spacing);
+            case TOP -> getTopPoints(spacing);
+            case HORIZONTAL -> getHorizontalPoints(spacing, displayHeight);
+            case VERTICAL -> getVerticalPoints(spacing);
+        };
     }
     
     /**

@@ -14,29 +14,109 @@ particles:
 # 不同類型領地的粒子設定
 claim-types:
   admin:
-    particle: REDSTONE
-    color: 
-      red: 255
-      green: 0
-      blue: 0
+    # 底部邊框
+    bottom:
+      particle: REDSTONE
+      color: 
+        red: 255
+        green: 0
+        blue: 0
+    # 頂部邊框
+    top:
+      particle: REDSTONE
+      color: 
+        red: 255
+        green: 0
+        blue: 0
+    # 玩家所在高度的水平線
+    horizontal:
+      particle: REDSTONE
+      color: 
+        red: 255
+        green: 0
+        blue: 0
+    # 垂直連接線
+    vertical:
+      particle: REDSTONE
+      color: 
+        red: 255
+        green: 0
+        blue: 0
   basic:
-    particle: REDSTONE
-    color:
-      red: 0
-      green: 255
-      blue: 0
+    bottom:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 255
+        blue: 0
+    top:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 200
+        blue: 0
+    horizontal:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 255
+        blue: 0
+    vertical:
+      particle: REDSTONE
+      color:
+        red: 40
+        green: 255
+        blue: 40
   subdivision:
-    particle: REDSTONE
-    color:
-      red: 0
-      green: 0
-      blue: 255
+    bottom:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 0
+        blue: 255
+    top:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 0
+        blue: 200
+    horizontal:
+      particle: REDSTONE
+      color:
+        red: 0
+        green: 0
+        blue: 255
+    vertical:
+      particle: REDSTONE
+      color:
+        red: 100
+        green: 100
+        blue: 255
   town:
-    particle: REDSTONE
-    color:
-      red: 255
-      green: 255
-      blue: 0
+    bottom:
+      particle: REDSTONE
+      color:
+        red: 255
+        green: 255
+        blue: 0
+    top:
+      particle: REDSTONE
+      color:
+        red: 255
+        green: 200
+        blue: 0
+    horizontal:
+      particle: REDSTONE
+      color:
+        red: 255
+        green: 255
+        blue: 0
+    vertical:
+      particle: REDSTONE
+      color:
+        red: 255
+        green: 180
+        blue: 0
 
 # 性能設定
 performance:
