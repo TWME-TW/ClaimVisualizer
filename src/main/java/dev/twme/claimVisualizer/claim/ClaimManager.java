@@ -141,7 +141,8 @@ public class ClaimManager {
             int maxY = claim.getGreaterBoundaryCorner().getY();
             int maxZ = claim.getGreaterBoundaryCorner().getZ();
             
-            ClaimBoundary boundary = new ClaimBoundary(claimId, ownerId, type, world, minX, minY, minZ, maxX, maxY, maxZ);
+            // 修正：對 maxX、maxY 和 maxZ 加 1，以包含最後一個方塊的完整體積
+            ClaimBoundary boundary = new ClaimBoundary(claimId, ownerId, type, world, minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
             worldClaims.put(claimId, boundary);
         }
         
