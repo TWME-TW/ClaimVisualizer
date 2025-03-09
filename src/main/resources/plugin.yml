@@ -1,5 +1,5 @@
 name: ClaimVisualizer
-version: '0.0.1'
+version: '${project.version}'
 main: dev.twme.claimVisualizer.ClaimVisualizer
 api-version: '1.21'
 depend: [GriefDefender]
