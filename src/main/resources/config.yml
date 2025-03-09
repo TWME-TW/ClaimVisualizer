@@ -8,8 +8,6 @@ particles:
   render-distance: 20
   # Particle spacing (in blocks)
   spacing: 1.0
-  # Particle display height (relative to ground)
-  height: 1.0
   # Particle display interval (in ticks) - How often to display a batch of particles
   display-interval: 1
   

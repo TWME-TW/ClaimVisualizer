@@ -17,7 +17,6 @@ public class ConfigManager {
     private int updateInterval;
     private int renderDistance;
     private double particleSpacing;
-    private double particleHeight;
     private int maxClaims;
     private boolean asyncRendering;
     private int cacheTime;
@@ -47,8 +46,7 @@ public class ConfigManager {
         updateInterval = config.getInt("particles.update-interval", 10);
         renderDistance = config.getInt("particles.render-distance", 30);
         particleSpacing = config.getDouble("particles.spacing", 0.5);
-        particleHeight = config.getDouble("particles.height", 1.0);
-        
+
         // 載入性能設定
         maxClaims = config.getInt("performance.max-claims", 20);
         asyncRendering = config.getBoolean("performance.async-rendering", true);
@@ -129,10 +127,6 @@ public class ConfigManager {
     
     public double getParticleSpacing() {
         return particleSpacing;
-    }
-    
-    public double getParticleHeight() {
-        return particleHeight;
     }
     
     public int getMaxClaims() {
