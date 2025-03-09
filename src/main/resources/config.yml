@@ -3,11 +3,11 @@
 # 粒子設定
 particles:
   # 更新頻率 (單位：刻)
-  update-interval: 10
+  update-interval: 15
   # 渲染距離 (單位：方塊)
-  render-distance: 30
+  render-distance: 20
   # 粒子間隔 (單位：方塊)
-  spacing: 0.5
+  spacing: 1.0
   # 粒子顯示高度 (相對於地面)
   height: 1.0
   
@@ -121,11 +121,11 @@ claim-types:
 # 性能設定
 performance:
   # 最大同時渲染的領地數量
-  max-claims: 20
+  max-claims: 10
   # 使用非同步渲染
   async-rendering: true
   # 快取時間 (單位：秒)
-  cache-time: 30
+  cache-time: 10
 
 # 顯示設定  
 display:
@@ -142,4 +142,4 @@ display:
   # 牆面模式顯示半徑
   wall-radius: 3.0
   # OUTLINE模式顯示半徑
-  outline-radius: 5.0
+  outline-radius: 4.0
