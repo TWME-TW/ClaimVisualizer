@@ -1,43 +1,43 @@
-# ClaimVisualizer 配置檔案
+# ClaimVisualizer Configuration File
 
-# 粒子設定
+# Particle Settings
 particles:
-  # 更新頻率 (單位：刻)
+  # Update frequency (in ticks)
   update-interval: 10
-  # 渲染距離 (單位：方塊)
+  # Render distance (in blocks)
   render-distance: 20
-  # 粒子間隔 (單位：方塊)
+  # Particle spacing (in blocks)
   spacing: 1.0
-  # 粒子顯示高度 (相對於地面)
+  # Particle display height (relative to ground)
   height: 1.0
-  # 粒子顯示間隔 (單位：刻) - 每隔多少刻顯示一批粒子
+  # Particle display interval (in ticks) - How often to display a batch of particles
   display-interval: 1
   
-# 不同類型領地的粒子設定
+# Particle settings for different claim types
 claim-types:
   admin:
-    # 底部邊框
+    # Bottom frame
     bottom:
       particle: REDSTONE
       color: 
         red: 255
         green: 0
         blue: 0
-    # 頂部邊框
+    # Top frame
     top:
       particle: REDSTONE
       color: 
         red: 255
         green: 0
         blue: 0
-    # 玩家所在高度的水平線
+    # Horizontal line at player's height
     horizontal:
       particle: REDSTONE
       color: 
         red: 255
         green: 0
         blue: 0
-    # 垂直連接線
+    # Vertical connecting lines
     vertical:
       particle: REDSTONE
       color: 
@@ -120,28 +120,28 @@ claim-types:
         green: 180
         blue: 0
 
-# 性能設定
+# Performance Settings
 performance:
-  # 最大同時渲染的領地數量
+  # Maximum number of claims rendered simultaneously
   max-claims: 10
-  # 使用非同步渲染
+  # Use asynchronous rendering
   async-rendering: true
-  # 快取時間 (單位：秒)
+  # Cache time (in seconds)
   cache-time: 10
 
-# 顯示設定  
+# Display Settings
 display:
-  # 顯示模式: CORNERS (僅角落), OUTLINE (僅輪廓), FULL (完整邊界), WALL (牆面)
+  # Display mode: CORNERS (corner only), OUTLINE (outline only), FULL (complete boundary), WALL (wall surface)
   mode: OUTLINE
-  # 顯示自己的領地
+  # Show own claims
   show-own-claims: true
-  # 顯示他人的領地
+  # Show others' claims
   show-others-claims: true
-  # 顯示管理員領地
+  # Show admin claims
   show-admin-claims: true
-  # 顯示城鎮領地
+  # Show town claims
   show-town-claims: true
-  # 牆面模式顯示半徑
+  # Wall mode display radius
   wall-radius: 3.0
-  # OUTLINE模式顯示半徑
+  # OUTLINE mode display radius
   outline-radius: 4.0

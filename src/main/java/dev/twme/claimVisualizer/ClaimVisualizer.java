@@ -42,7 +42,7 @@ public final class ClaimVisualizer extends JavaPlugin {
         // 啟動渲染排程任務
         particleRenderer.startRenderTask();
         
-        getLogger().info("ClaimVisualizer 插件已啟用！");
+        getLogger().info("ClaimVisualizer has been enabled!");
     }
 
     @Override
@@ -60,7 +60,7 @@ public final class ClaimVisualizer extends JavaPlugin {
             claimManager.clearAllCache();
         }
         
-        getLogger().info("ClaimVisualizer 插件已停用！");
+        getLogger().info("ClaimVisualizer has been disabled!");
     }
     
     /**
@@ -80,7 +80,7 @@ public final class ClaimVisualizer extends JavaPlugin {
         particleRenderer.stopRenderTask();
         particleRenderer.startRenderTask();
         
-        getLogger().info("ClaimVisualizer 設定已重新載入！");
+        getLogger().info("ClaimVisualizer has been reloaded!");
     }
     
     public ConfigManager getConfigManager() {

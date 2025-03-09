@@ -3,23 +3,23 @@ version: '0.0.1'
 main: dev.twme.claimVisualizer.ClaimVisualizer
 api-version: '1.21'
 depend: [GriefDefender]
-description: 使用粒子效果視覺化顯示領地邊界
+description: Visualize claim boundaries using particle effects
 authors: [twme]
 commands:
   claimvisual:
-    description: 領地視覺化插件主命令
+    description: Main command for claim visualization plugin
     usage: /claimvisual [on|off|reload|help|mode|language]
     aliases: [cv, claimviz]
 permissions:
   claimvisualizer.use:
-    description: 允許使用基本視覺化功能
+    description: Allow using basic visualization features
     default: true
   claimvisualizer.reload:
-    description: 允許重新載入插件配置
+    description: Allow reloading plugin configuration
     default: op
   claimvisualizer.language:
-    description: 允許更改插件語言顯示
+    description: Allow changing plugin display language
     default: true
   claimvisualizer.autoenable:
-    description: 登入伺服器時自動啟用領地視覺化效果
+    description: Automatically enable claim visualization when joining the server
     default: false

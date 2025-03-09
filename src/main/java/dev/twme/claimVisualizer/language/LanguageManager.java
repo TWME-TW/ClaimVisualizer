@@ -56,13 +56,13 @@ public class LanguageManager {
                 }
                 
                 languageFiles.put(langCode, config);
-                plugin.getLogger().info("已載入語言: " + langCode);
+                plugin.getLogger().info("Language loaded: " + langCode);
             }
         }
         
         // 確保預設語言存在
         if (!languageFiles.containsKey(defaultLanguage)) {
-            plugin.getLogger().warning("找不到預設語言 (en)，插件可能無法正常顯示訊息！");
+            plugin.getLogger().warning("Cannot find default language file: " + defaultLanguage + ".yml");
         }
     }
     
@@ -162,7 +162,7 @@ public class LanguageManager {
         }
         
         // 如果還是找不到，返回錯誤訊息
-        return "<red>找不到訊息：" + path;
+        return "<red>Missing message: " + path;
     }
     
     /**
