@@ -83,6 +83,7 @@ public class ParticleRenderer {
         
         // 獲取玩家當前高度，用於確定顯示哪些粒子
         int playerY = player.getLocation().getBlockY();
+        int renderDistance = configManager.getRenderDistance();
         
         for (ClaimBoundary claim : claims) {
             if (mode == ConfigManager.DisplayMode.CORNERS) {
@@ -91,6 +92,16 @@ public class ParticleRenderer {
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                 
                 List<Location> points = claim.getCornerPoints(5, playerY);
+                for (Location loc : points) {
+                    spawnParticle(player, particleSettings.getParticle(), 
+                            loc, particleSettings.getColor());
+                }
+            } else if (mode == ConfigManager.DisplayMode.WALL) {
+                // WALL 模式 - 使用新的牆面顯示邏輯
+                ConfigManager.ParticleSettings particleSettings = 
+                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
+                
+                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing);
                 for (Location loc : points) {
                     spawnParticle(player, particleSettings.getParticle(), 
                             loc, particleSettings.getColor());
@@ -124,6 +135,7 @@ public class ParticleRenderer {
                 
                 // 獲取玩家當前高度
                 int playerY = player.getLocation().getBlockY();
+                int renderDistance = configManager.getRenderDistance();
                 
                 List<ParticleData> particleData = new ArrayList<>();
                 
@@ -134,6 +146,16 @@ public class ParticleRenderer {
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                         
                         List<Location> points = claim.getCornerPoints(5, playerY);
+                        for (Location loc : points) {
+                            particleData.add(new ParticleData(particleSettings.getParticle(), 
+                                    loc, particleSettings.getColor()));
+                        }
+                    } else if (mode == ConfigManager.DisplayMode.WALL) {
+                        // WALL 模式 - 使用新的牆面顯示邏輯
+                        ConfigManager.ParticleSettings particleSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
+                        
+                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing);
                         for (Location loc : points) {
                             particleData.add(new ParticleData(particleSettings.getParticle(), 
                                     loc, particleSettings.getColor()));

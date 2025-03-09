@@ -129,7 +129,7 @@ performance:
 
 # 顯示設定  
 display:
-  # 顯示模式: CORNERS (僅角落), OUTLINE (僅輪廓), FULL (完整邊界)
+  # 顯示模式: CORNERS (僅角落), OUTLINE (僅輪廓), FULL (完整邊界), WALL (牆面)
   mode: OUTLINE
   # 顯示自己的領地
   show-own-claims: true

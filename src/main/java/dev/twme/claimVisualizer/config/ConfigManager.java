@@ -179,7 +179,7 @@ public class ConfigManager {
     }
     
     public enum DisplayMode {
-        CORNERS, OUTLINE, FULL
+        CORNERS, OUTLINE, FULL, WALL
     }
     
     /**
