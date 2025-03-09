@@ -3,6 +3,7 @@ package dev.twme.claimVisualizer;
 import dev.twme.claimVisualizer.claim.ClaimManager;
 import dev.twme.claimVisualizer.command.VisualizerCommand;
 import dev.twme.claimVisualizer.config.ConfigManager;
+import dev.twme.claimVisualizer.language.LanguageManager;
 import dev.twme.claimVisualizer.listener.EventListener;
 import dev.twme.claimVisualizer.player.PlayerSession;
 import dev.twme.claimVisualizer.render.ParticleRenderer;
@@ -13,11 +14,15 @@ public final class ClaimVisualizer extends JavaPlugin {
     private ConfigManager configManager;
     private ClaimManager claimManager;
     private ParticleRenderer particleRenderer;
+    private LanguageManager languageManager;
     
     @Override
     public void onEnable() {
         // 初始化配置管理器
         configManager = new ConfigManager(this);
+        
+        // 初始化語言管理器
+        languageManager = new LanguageManager(this);
         
         // 初始化領地管理器
         claimManager = new ClaimManager(this);
@@ -65,6 +70,9 @@ public final class ClaimVisualizer extends JavaPlugin {
         // 重新載入配置
         configManager.loadConfig();
         
+        // 重新載入語言檔案
+        languageManager.loadLanguages();
+        
         // 清除領地快取
         claimManager.clearAllCache();
         
@@ -81,5 +89,9 @@ public final class ClaimVisualizer extends JavaPlugin {
     
     public ClaimManager getClaimManager() {
         return claimManager;
+    }
+    
+    public LanguageManager getLanguageManager() {
+        return languageManager;
     }
 }

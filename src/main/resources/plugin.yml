@@ -8,7 +8,7 @@ authors: [twme]
 commands:
   claimvisual:
     description: 領地視覺化插件主命令
-    usage: /claimvisual [on|off|reload|help]
+    usage: /claimvisual [on|off|reload|help|mode|language]
     aliases: [cv, claimviz]
 permissions:
   claimvisualizer.use:
@@ -17,6 +17,9 @@ permissions:
   claimvisualizer.reload:
     description: 允許重新載入插件配置
     default: op
+  claimvisualizer.language:
+    description: 允許更改插件語言顯示
+    default: true
   claimvisualizer.autoenable:
     description: 登入伺服器時自動啟用領地視覺化效果
     default: false

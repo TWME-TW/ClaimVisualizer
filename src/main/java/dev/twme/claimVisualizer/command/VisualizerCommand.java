@@ -2,8 +2,9 @@ package dev.twme.claimVisualizer.command;
 
 import dev.twme.claimVisualizer.ClaimVisualizer;
 import dev.twme.claimVisualizer.config.ConfigManager;
+import dev.twme.claimVisualizer.language.LanguageManager;
 import dev.twme.claimVisualizer.player.PlayerSession;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,15 +19,18 @@ import java.util.stream.Collectors;
 public class VisualizerCommand implements CommandExecutor, TabCompleter {
 
     private final ClaimVisualizer plugin;
+    private final LanguageManager languageManager;
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     public VisualizerCommand(ClaimVisualizer plugin) {
         this.plugin = plugin;
+        this.languageManager = plugin.getLanguageManager();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "此指令只能由玩家執行！");
+            sender.sendMessage(languageManager.getMessageInLanguage("command.player_only", "en"));
             return true;
         }
 
@@ -40,33 +44,81 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             case "off" -> disableVisualization(player);
             case "reload" -> reloadPlugin(player);
             case "help" -> sendHelpMessage(player);
-            case "mode" -> {
-                if (!player.hasPermission("claimvisualizer.use")) {
-                    player.sendMessage(ChatColor.RED + "您沒有權限使用此功能！");
-                    return true;
-                }
-                if (args.length < 2) {
-                    player.sendMessage(ChatColor.YELLOW + "請指定模式: CORNERS, OUTLINE, FULL, WALL");
-                    return true;
-                }
-                try {
-                    ConfigManager.DisplayMode mode = ConfigManager.DisplayMode.valueOf(args[1].toUpperCase());
-                    PlayerSession session = PlayerSession.getSession(player);
-                    session.setDisplayMode(mode);
-                    player.sendMessage(ChatColor.GREEN + "已設定粒子顯示模式為：" + mode);
-                } catch (IllegalArgumentException e) {
-                    player.sendMessage(ChatColor.RED + "無效的模式！可用模式: CORNERS, OUTLINE, FULL, WALL");
-                }
-            }
-            default -> sendUnknownCommandMessage(player);
+            case "mode" -> handleModeCommand(player, args);
+            case "language", "lang" -> handleLanguageCommand(player, args);
+            default -> player.sendMessage(languageManager.getMessage("command.unknown", player));
         }
 
         return true;
     }
 
+    private void handleLanguageCommand(Player player, String[] args) {
+        if (!player.hasPermission("claimvisualizer.language")) {
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
+            return;
+        }
+
+        if (args.length < 2) {
+            // 顯示可用語言清單
+            List<String> languages = languageManager.getAvailableLanguages();
+            player.sendMessage(languageManager.getMessage("command.language.available", player));
+            
+            StringBuilder langList = new StringBuilder();
+            for (String lang : languages) {
+                langList.append(lang).append(", ");
+            }
+            if (langList.length() > 2) {
+                langList.setLength(langList.length() - 2); // 移除最後的", "
+            }
+            
+            // 直接使用 MiniMessage 解析字串
+            player.sendMessage(miniMessage.deserialize("<yellow>" + langList));
+            
+            // 使用佔位符而不是 append
+            String currentLang = languageManager.getPlayerLanguage(player.getUniqueId());
+            player.sendMessage(languageManager.getMessage("command.language.current", player, currentLang));
+            return;
+        }
+
+        String langCode = args[1].toLowerCase();
+        if (!languageManager.getAvailableLanguages().contains(langCode)) {
+            player.sendMessage(languageManager.getMessage("command.language.not_found", player));
+            return;
+        }
+
+        languageManager.setPlayerLanguage(player.getUniqueId(), langCode);
+        PlayerSession session = PlayerSession.getSession(player);
+        session.setLanguage(langCode);
+        
+        player.sendMessage(languageManager.getMessage("command.language.changed", player));
+    }
+
+    private void handleModeCommand(Player player, String[] args) {
+        if (!player.hasPermission("claimvisualizer.use")) {
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
+            return;
+        }
+        
+        if (args.length < 2) {
+            player.sendMessage(languageManager.getMessage("command.mode.specify", player));
+            return;
+        }
+        
+        try {
+            ConfigManager.DisplayMode mode = ConfigManager.DisplayMode.valueOf(args[1].toUpperCase());
+            PlayerSession session = PlayerSession.getSession(player);
+            session.setDisplayMode(mode);
+            
+            // 使用佔位符而不是 append
+            player.sendMessage(languageManager.getMessage("command.mode.set", player, mode));
+        } catch (IllegalArgumentException e) {
+            player.sendMessage(languageManager.getMessage("command.mode.invalid", player));
+        }
+    }
+
     private void toggleVisualization(Player player) {
         if (!player.hasPermission("claimvisualizer.use")) {
-            player.sendMessage(ChatColor.RED + "您沒有權限使用此功能！");
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
             return;
         }
 
@@ -74,82 +126,99 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
         session.toggleVisualization();
 
         if (session.isVisualizationEnabled()) {
-            player.sendMessage(ChatColor.GREEN + "已啟用領地視覺化效果！");
+            player.sendMessage(languageManager.getMessage("command.on", player));
         } else {
-            player.sendMessage(ChatColor.YELLOW + "已停用領地視覺化效果！");
+            player.sendMessage(languageManager.getMessage("command.off", player));
         }
     }
 
     private void enableVisualization(Player player) {
         if (!player.hasPermission("claimvisualizer.use")) {
-            player.sendMessage(ChatColor.RED + "您沒有權限使用此功能！");
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
             return;
         }
 
         PlayerSession session = PlayerSession.getSession(player);
         if (session.isVisualizationEnabled()) {
-            player.sendMessage(ChatColor.YELLOW + "領地視覺化效果已經是啟用狀態！");
+            player.sendMessage(languageManager.getMessage("command.already_on", player));
             return;
         }
 
         session.setVisualizationEnabled(true);
-        player.sendMessage(ChatColor.GREEN + "已啟用領地視覺化效果！");
+        player.sendMessage(languageManager.getMessage("command.on", player));
     }
 
     private void disableVisualization(Player player) {
         PlayerSession session = PlayerSession.getSession(player);
         if (!session.isVisualizationEnabled()) {
-            player.sendMessage(ChatColor.YELLOW + "領地視覺化效果已經是停用狀態！");
+            player.sendMessage(languageManager.getMessage("command.already_off", player));
             return;
         }
 
         session.setVisualizationEnabled(false);
-        player.sendMessage(ChatColor.YELLOW + "已停用領地視覺化效果！");
+        player.sendMessage(languageManager.getMessage("command.off", player));
     }
 
     private void reloadPlugin(Player player) {
         if (!player.hasPermission("claimvisualizer.reload")) {
-            player.sendMessage(ChatColor.RED + "您沒有權限重新載入插件！");
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
             return;
         }
 
         plugin.reloadPluginConfig();
-        player.sendMessage(ChatColor.GREEN + "插件設定已重新載入！");
+        player.sendMessage(languageManager.getMessage("command.reload", player));
     }
 
     private void sendHelpMessage(Player player) {
-        player.sendMessage(ChatColor.GREEN + "===== 領地視覺化插件指令 =====");
-        player.sendMessage(ChatColor.YELLOW + "/claimvisual " + ChatColor.WHITE + "- 切換領地視覺化效果");
-        player.sendMessage(ChatColor.YELLOW + "/claimvisual on " + ChatColor.WHITE + "- 啟用領地視覺化效果");
-        player.sendMessage(ChatColor.YELLOW + "/claimvisual off " + ChatColor.WHITE + "- 停用領地視覺化效果");
-        player.sendMessage(ChatColor.YELLOW + "/claimvisual mode <模式>" + ChatColor.WHITE + "- 設定粒子顯示模式 (CORNERS, OUTLINE, FULL, WALL)");
+        player.sendMessage(languageManager.getMessage("command.help.header", player));
+        player.sendMessage(languageManager.getMessage("command.help.toggle", player));
+        player.sendMessage(languageManager.getMessage("command.help.on", player));
+        player.sendMessage(languageManager.getMessage("command.help.off", player));
+        player.sendMessage(languageManager.getMessage("command.help.mode", player));
         
-        if (player.hasPermission("claimvisualizer.reload")) {
-            player.sendMessage(ChatColor.YELLOW + "/claimvisual reload " + ChatColor.WHITE + "- 重新載入插件設定");
+        if (player.hasPermission("claimvisualizer.language")) {
+            player.sendMessage(languageManager.getMessage("command.help.language", player));
         }
         
-        player.sendMessage(ChatColor.YELLOW + "/claimvisual help " + ChatColor.WHITE + "- 顯示此幫助訊息");
-    }
-
-    private void sendUnknownCommandMessage(Player player) {
-        player.sendMessage(ChatColor.RED + "未知的指令！請使用 /claimvisual help 查看可用指令。");
+        if (player.hasPermission("claimvisualizer.reload")) {
+            player.sendMessage(languageManager.getMessage("command.help.reload", player));
+        }
+        
+        player.sendMessage(languageManager.getMessage("command.help.help", player));
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> options = new ArrayList<>(Arrays.asList("on", "off", "help", "mode"));
+            
+            if (sender.hasPermission("claimvisualizer.language")) {
+                options.add("language");
+                options.add("lang");
+            }
+            
             if (sender.hasPermission("claimvisualizer.reload")) {
                 options.add("reload");
             }
+            
             return options.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("mode")) {
-            List<String> modes = new ArrayList<>(Arrays.asList("CORNERS", "OUTLINE", "FULL", "WALL"));
-            return modes.stream()
-                    .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("mode")) {
+                List<String> modes = Arrays.stream(ConfigManager.DisplayMode.values())
+                        .map(Enum::name)
+                        .collect(Collectors.toList());
+                return modes.stream()
+                        .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            } else if (args[0].equalsIgnoreCase("language") || args[0].equalsIgnoreCase("lang")) {
+                if (sender.hasPermission("claimvisualizer.language")) {
+                    return plugin.getLanguageManager().getAvailableLanguages().stream()
+                            .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                            .collect(Collectors.toList());
+                }
+            }
         }
         return new ArrayList<>();
     }

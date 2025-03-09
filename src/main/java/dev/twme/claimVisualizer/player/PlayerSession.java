@@ -14,14 +14,17 @@ public class PlayerSession {
     private final UUID playerId;
     private boolean visualizationEnabled;
     private long lastUpdateTime;
-    // 新增：玩家自訂的粒子顯示模式 (若為 null 表示使用預設設定)
+    // 玩家自訂的粒子顯示模式 (若為 null 表示使用預設設定)
     private ConfigManager.DisplayMode displayMode;
+    // 玩家語言設定
+    private String language;
     
     private PlayerSession(UUID playerId) {
         this.playerId = playerId;
         this.visualizationEnabled = false;
         this.lastUpdateTime = System.currentTimeMillis();
         this.displayMode = null; // 使用預設模式
+        this.language = "en"; // 預設語言
     }
     
     public static PlayerSession getSession(Player player) {
@@ -72,5 +75,19 @@ public class PlayerSession {
     public void setDisplayMode(ConfigManager.DisplayMode mode) {
         this.displayMode = mode;
         this.lastUpdateTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * 取得玩家語言設定
+     */
+    public String getLanguage() {
+        return language;
+    }
+    
+    /**
+     * 設定玩家語言
+     */
+    public void setLanguage(String language) {
+        this.language = language;
     }
 }

@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLocaleChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -31,6 +32,11 @@ public class EventListener implements Listener {
         // 初始化玩家會話
         PlayerSession session = PlayerSession.getSession(event.getPlayer());
         
+        // 設定玩家語言
+        String locale = event.getPlayer().getLocale();
+        plugin.getLanguageManager().setPlayerLanguage(event.getPlayer().getUniqueId(), locale);
+        session.setLanguage(plugin.getLanguageManager().getPlayerLanguage(event.getPlayer().getUniqueId()));
+        
         // 檢查玩家是否有自動啟用視覺化的權限
         if (event.getPlayer().hasPermission("claimvisualizer.autoenable") && 
             event.getPlayer().hasPermission("claimvisualizer.use")) {
@@ -41,11 +47,9 @@ public class EventListener implements Listener {
                 if (plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
                     renderer.renderClaims(event.getPlayer());
                     
-                    // 發送提示訊息
-                    event.getPlayer().sendMessage(ChatColor.GREEN + "已自動啟用領地視覺化效果！");
-                    event.getPlayer().sendMessage(ChatColor.YELLOW + "使用 " + ChatColor.WHITE + "/claimvisual" + 
-                                                  ChatColor.YELLOW + " 或 " + ChatColor.WHITE + "/cv" + 
-                                                  ChatColor.YELLOW + " 可切換此功能的開關狀態。");
+                    // 發送提示訊息，使用多語言系統
+                    event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.auto_enable", event.getPlayer()));
+                    event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.help.toggle_hint", event.getPlayer()));
                 }
             }, 20L); // 20 ticks = 1秒
         }
@@ -55,6 +59,16 @@ public class EventListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         // 清理玩家會話
         PlayerSession.removeSession(event.getPlayer().getUniqueId());
+    }
+    
+    @EventHandler
+    public void onPlayerLocaleChange(PlayerLocaleChangeEvent event) {
+        // 當玩家更改語言設定時，更新語言偏好
+        String locale = event.getLocale();
+        plugin.getLanguageManager().setPlayerLanguage(event.getPlayer().getUniqueId(), locale);
+        
+        PlayerSession session = PlayerSession.getSession(event.getPlayer());
+        session.setLanguage(plugin.getLanguageManager().getPlayerLanguage(event.getPlayer().getUniqueId()));
     }
     
     @EventHandler
