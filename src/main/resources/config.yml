@@ -11,7 +11,7 @@ particles:
   # Particle display interval (in ticks) - How often to display a batch of particles
   display-interval: 1
   # Player view angle range (in degrees) - The angle range in which particles are displayed
-  view-angle-range: 180.0
+  view-angle-range: 150
   
 # Particle settings for different claim types
 claim-types:
@@ -144,4 +144,4 @@ display:
   # Wall mode display radius
   wall-radius: 3.5
   # OUTLINE mode display radius
-  outline-radius: 6.0
+  outline-radius: 10.5
