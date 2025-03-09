@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ParticleRenderer {
 
@@ -21,6 +22,14 @@ public class ParticleRenderer {
     private final ConfigManager configManager;
     
     private BukkitTask renderTask;
+    private BukkitTask particleDisplayTask; // 新增：用於分批顯示粒子的任務
+    
+    // 新增：玩家粒子佇列映射表
+    private final Map<UUID, Queue<List<ParticleData>>> playerParticleQueues = new ConcurrentHashMap<>();
+    // 新增：粒子分批大小
+    private static final int PARTICLE_BATCH_SIZE = 20;
+    // 新增：粒子顯示間隔（刻）
+    private static final int PARTICLE_DISPLAY_INTERVAL = 1;
     
     public ParticleRenderer(ClaimVisualizer plugin, ClaimManager claimManager) {
         this.plugin = plugin;
@@ -36,6 +45,10 @@ public class ParticleRenderer {
             renderTask.cancel();
         }
         
+        if (particleDisplayTask != null) {
+            particleDisplayTask.cancel();
+        }
+        
         int updateInterval = configManager.getUpdateInterval();
         
         renderTask = new BukkitRunnable() {
@@ -44,6 +57,14 @@ public class ParticleRenderer {
                 renderForAllPlayers();
             }
         }.runTaskTimer(plugin, updateInterval, updateInterval);
+        
+        // 新增：啟動粒子分批顯示任務
+        particleDisplayTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                processParticleQueues();
+            }
+        }.runTaskTimer(plugin, PARTICLE_DISPLAY_INTERVAL, PARTICLE_DISPLAY_INTERVAL);
     }
     
     /**
@@ -54,6 +75,14 @@ public class ParticleRenderer {
             renderTask.cancel();
             renderTask = null;
         }
+        
+        if (particleDisplayTask != null) {
+            particleDisplayTask.cancel();
+            particleDisplayTask = null;
+        }
+        
+        // 清空所有粒子佇列
+        playerParticleQueues.clear();
     }
     
     /**
@@ -86,46 +115,48 @@ public class ParticleRenderer {
         int playerY = player.getLocation().getBlockY();
         int renderDistance = configManager.getRenderDistance();
         
+        // 新增：收集所有粒子資料而不是直接顯示
+        List<ParticleData> allParticles = new ArrayList<>();
+        
         for (ClaimBoundary claim : claims) {
             if (mode == ConfigManager.DisplayMode.CORNERS) {
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                 List<Location> points = claim.getCornerPoints(5, playerY);
                 for (Location loc : points) {
-                    spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
+                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                 }
             } else if (mode == ConfigManager.DisplayMode.WALL) {
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                 List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                 for (Location loc : points) {
-                    spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
+                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                 }
             } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
-                // 修改 OUTLINE 模式，使用設定中的半徑值
                 double outlineRadius = configManager.getOutlineRadius();
-                // 使用修改後的 getOutlineNearbyPoints 方法
                 List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
                 
-                // 對所有顯示的點都使用水平線的顏色設定
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
-                
+                                
                 for (Location loc : points) {
-                    spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
+                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                 }
             } else {
-                // FULL 模式保持不變
                 for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                     ConfigManager.ParticleSettings particleSettings = 
                             configManager.getParticleSettings(claim.getType(), part);
                     List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                     for (Location loc : points) {
-                        spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
+                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                     }
                 }
             }
         }
+        
+        // 新增：將收集的粒子資料分批並加入佇列
+        queueParticlesForPlayer(player.getUniqueId(), allParticles);
     }
     
     /**
@@ -137,14 +168,13 @@ public class ParticleRenderer {
             public void run() {
                 Set<ClaimBoundary> claims = claimManager.getNearbyClaims(player);
                 double spacing = configManager.getParticleSpacing();
-                // 使用玩家自訂模式，如未設定則使用預設設定
                 PlayerSession session = PlayerSession.getSession(player);
                 ConfigManager.DisplayMode mode = (session.getDisplayMode() != null) ? session.getDisplayMode() : configManager.getDisplayMode();
                 
                 int playerY = player.getLocation().getBlockY();
                 int renderDistance = configManager.getRenderDistance();
                 
-                List<ParticleData> particleData = new ArrayList<>();
+                List<ParticleData> allParticles = new ArrayList<>();
                 
                 for (ClaimBoundary claim : claims) {
                     if (mode == ConfigManager.DisplayMode.CORNERS) {
@@ -152,52 +182,109 @@ public class ParticleRenderer {
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                         List<Location> points = claim.getCornerPoints(5, playerY);
                         for (Location loc : points) {
-                            particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                         }
                     } else if (mode == ConfigManager.DisplayMode.WALL) {
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                         for (Location loc : points) {
-                            particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                         }
                     } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
-                        // 修改 OUTLINE 模式，使用設定中的半徑值
                         double outlineRadius = configManager.getOutlineRadius();
-                        // 使用修改後的 getOutlineNearbyPoints 方法
                         List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
                         
-                        // 對所有顯示的點都使用水平線的顏色設定
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
                                 
                         for (Location loc : points) {
-                            particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                         }
                     } else {
-                        // FULL 模式保持不變
                         for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                             ConfigManager.ParticleSettings particleSettings = 
                                     configManager.getParticleSettings(claim.getType(), part);
                             List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                             for (Location loc : points) {
-                                particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                             }
                         }
                     }
                 }
                 
-                // 切換回主執行緒顯示粒子
+                // 修改：切換回主執行緒，但只將粒子資料加入佇列而不是立即顯示
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        for (ParticleData data : particleData) {
-                            spawnParticle(player, data.getParticle(), data.getLocation(), data.getColor());
-                        }
+                        queueParticlesForPlayer(player.getUniqueId(), allParticles);
                     }
                 }.runTask(plugin);
             }
         }.runTaskAsynchronously(plugin);
+    }
+    
+    /**
+     * 新增：將粒子資料分批並加入玩家的粒子佇列
+     */
+    private void queueParticlesForPlayer(UUID playerId, List<ParticleData> particleData) {
+        // 打亂粒子順序，使顯示更加自然
+        Collections.shuffle(particleData);
+        
+        // 清除玩家現有佇列
+        playerParticleQueues.remove(playerId);
+        
+        // 建立新佇列
+        Queue<List<ParticleData>> particleQueue = new LinkedList<>();
+        
+        // 將粒子分批
+        int totalParticles = particleData.size();
+        
+        // 計算每批次應包含的粒子數量
+        int updateInterval = configManager.getUpdateInterval();
+        int batchCount = Math.max(1, Math.min(updateInterval / PARTICLE_DISPLAY_INTERVAL, 20)); // 最多分20批
+        int particlesPerBatch = Math.max(1, totalParticles / batchCount);
+        
+        // 分批將粒子加入佇列
+        List<ParticleData> batch = new ArrayList<>(particlesPerBatch);
+        for (ParticleData data : particleData) {
+            batch.add(data);
+            
+            if (batch.size() >= particlesPerBatch) {
+                particleQueue.add(new ArrayList<>(batch));
+                batch.clear();
+            }
+        }
+        
+        // 處理剩餘粒子
+        if (!batch.isEmpty()) {
+            particleQueue.add(batch);
+        }
+        
+        // 將佇列加入映射表
+        playerParticleQueues.put(playerId, particleQueue);
+    }
+    
+    /**
+     * 新增：處理所有玩家的粒子佇列，每次顯示一批粒子
+     */
+    private void processParticleQueues() {
+        // 為所有在線玩家處理粒子佇列
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            UUID playerId = player.getUniqueId();
+            Queue<List<ParticleData>> queue = playerParticleQueues.get(playerId);
+            
+            if (queue != null && !queue.isEmpty()) {
+                // 從佇列取出一批粒子資料並顯示
+                List<ParticleData> batch = queue.poll();
+                
+                if (batch != null) {
+                    for (ParticleData data : batch) {
+                        spawnParticle(player, data.getParticle(), data.getLocation(), data.getColor());
+                    }
+                }
+            }
+        }
     }
     
     /**

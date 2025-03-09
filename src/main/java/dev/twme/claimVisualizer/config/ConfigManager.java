@@ -28,6 +28,7 @@ public class ConfigManager {
     private boolean showTownClaims;
     private double wallRadius;   // 牆面顯示半徑
     private double outlineRadius; // 新增：OUTLINE模式顯示半徑
+    private int particleDisplayInterval; // 新增：粒子顯示間隔
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
@@ -64,6 +65,9 @@ public class ConfigManager {
         // 讀取 wall-radius 和 outline-radius
         wallRadius = config.getDouble("display.wall-radius", 3.0);
         outlineRadius = config.getDouble("display.outline-radius", 5.0); // 新增：OUTLINE模式顯示半徑
+        
+        // 載入粒子顯示間隔
+        particleDisplayInterval = config.getInt("particles.display-interval", 1);
         
         // 載入不同領地類型的粒子設定
         loadParticleSettings();
@@ -169,6 +173,11 @@ public class ConfigManager {
     
     public double getOutlineRadius() {
         return outlineRadius;
+    }
+    
+    // 新增：取得粒子顯示間隔
+    public int getParticleDisplayInterval() {
+        return particleDisplayInterval;
     }
     
     /**

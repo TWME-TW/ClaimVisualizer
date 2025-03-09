@@ -3,13 +3,15 @@
 # 粒子設定
 particles:
   # 更新頻率 (單位：刻)
-  update-interval: 15
+  update-interval: 10
   # 渲染距離 (單位：方塊)
   render-distance: 20
   # 粒子間隔 (單位：方塊)
   spacing: 1.0
   # 粒子顯示高度 (相對於地面)
   height: 1.0
+  # 粒子顯示間隔 (單位：刻) - 每隔多少刻顯示一批粒子
+  display-interval: 1
   
 # 不同類型領地的粒子設定
 claim-types:
