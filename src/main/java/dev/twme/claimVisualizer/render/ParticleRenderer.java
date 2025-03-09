@@ -97,14 +97,12 @@ public class ParticleRenderer {
                             loc, particleSettings.getColor());
                 }
             } else if (mode == ConfigManager.DisplayMode.WALL) {
-                // WALL 模式 - 使用新的牆面顯示邏輯
+                // WALL 模式調用新方法
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
-                
                 List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing);
                 for (Location loc : points) {
-                    spawnParticle(player, particleSettings.getParticle(), 
-                            loc, particleSettings.getColor());
+                    spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
                 }
             } else {
                 // OUTLINE 和 FULL 模式使用新的邏輯，為每個部分使用不同粒子設定
@@ -151,7 +149,7 @@ public class ParticleRenderer {
                                     loc, particleSettings.getColor()));
                         }
                     } else if (mode == ConfigManager.DisplayMode.WALL) {
-                        // WALL 模式 - 使用新的牆面顯示邏輯
+                        // WALL 模式調用新方法
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         

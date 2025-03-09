@@ -6,7 +6,9 @@ import org.bukkit.World;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class ClaimBoundary {
@@ -477,48 +479,48 @@ public class ClaimBoundary {
     public List<Location> getWallModePoints(Location playerLocation, int renderDistance, double spacing) {
         List<Location> points = new ArrayList<>();
         
-        // 檢查玩家是否在領地內
         boolean isInside = isPlayerInside(playerLocation);
         
         if (isInside) {
-            // 玩家在領地內，顯示在渲染距離內的牆面
             List<WallFace> faces = getIntersectingFaces(playerLocation, renderDistance);
-            
             for (WallFace face : faces) {
-                // 計算玩家與該面最近的交點
                 Location nearestPoint = getNearestPointOnFace(playerLocation, face);
-                // 獲取該點半徑3格範圍內的粒子位置
                 points.addAll(getWallPointsInRadius(nearestPoint, 3.0, face, spacing));
             }
         } else {
-            // 玩家在領地外，只顯示最近點周圍
+            // 當玩家在領地外：根據玩家與領地最近點關係判斷要顯示的牆面個數
             Location nearestPoint = getNearestPoint(playerLocation);
+            double tolerance = 1.0; // 定義允許偏差
+            // 根據玩家位置判斷候選面
+            Set<WallFace> candidateFaces = new HashSet<>();
+            if (playerLocation.getX() < minX + tolerance) candidateFaces.add(WallFace.WEST);
+            if (playerLocation.getX() > maxX - tolerance) candidateFaces.add(WallFace.EAST);
+            if (playerLocation.getY() < minY + tolerance) candidateFaces.add(WallFace.BOTTOM);
+            if (playerLocation.getY() > maxY - tolerance) candidateFaces.add(WallFace.TOP);
+            if (playerLocation.getZ() < minZ + tolerance) candidateFaces.add(WallFace.NORTH);
+            if (playerLocation.getZ() > maxZ - tolerance) candidateFaces.add(WallFace.SOUTH);
             
-            // 確定最近點在哪個面上
-            double distToWest = Math.abs(nearestPoint.getX() - minX);
-            double distToEast = Math.abs(nearestPoint.getX() - maxX);
-            double distToBottom = Math.abs(nearestPoint.getY() - minY);
-            double distToTop = Math.abs(nearestPoint.getY() - maxY);
-            double distToNorth = Math.abs(nearestPoint.getZ() - minZ);
-            double distToSouth = Math.abs(nearestPoint.getZ() - maxZ);
-            
-            double minDist = Math.min(Math.min(Math.min(distToWest, distToEast), Math.min(distToBottom, distToTop)), Math.min(distToNorth, distToSouth));
-            
-            if (minDist == distToWest) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.WEST, spacing));
-            } else if (minDist == distToEast) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.EAST, spacing));
-            } else if (minDist == distToBottom) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.BOTTOM, spacing));
-            } else if (minDist == distToTop) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.TOP, spacing));
-            } else if (minDist == distToNorth) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.NORTH, spacing));
-            } else if (minDist == distToSouth) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, WallFace.SOUTH, spacing));
+            // 若候選面為空則使用原先最小距離邏輯
+            if (candidateFaces.isEmpty()) {
+                double distToWest = Math.abs(nearestPoint.getX() - minX);
+                double distToEast = Math.abs(nearestPoint.getX() - maxX);
+                double distToBottom = Math.abs(nearestPoint.getY() - minY);
+                double distToTop = Math.abs(nearestPoint.getY() - maxY);
+                double distToNorth = Math.abs(nearestPoint.getZ() - minZ);
+                double distToSouth = Math.abs(nearestPoint.getZ() - maxZ);
+                double minDist = Math.min(Math.min(Math.min(distToWest, distToEast), Math.min(distToBottom, distToTop)), Math.min(distToNorth, distToSouth));
+                if (minDist == distToWest) candidateFaces.add(WallFace.WEST);
+                else if (minDist == distToEast) candidateFaces.add(WallFace.EAST);
+                else if (minDist == distToBottom) candidateFaces.add(WallFace.BOTTOM);
+                else if (minDist == distToTop) candidateFaces.add(WallFace.TOP);
+                else if (minDist == distToNorth) candidateFaces.add(WallFace.NORTH);
+                else if (minDist == distToSouth) candidateFaces.add(WallFace.SOUTH);
+            }
+            // 針對所有候選面產生粒子點
+            for (WallFace face : candidateFaces) {
+                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, face, spacing));
             }
         }
-        
         return points;
     }
 }
