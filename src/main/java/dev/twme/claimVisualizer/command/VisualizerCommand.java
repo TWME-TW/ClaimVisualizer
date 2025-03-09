@@ -1,6 +1,7 @@
 package dev.twme.claimVisualizer.command;
 
 import dev.twme.claimVisualizer.ClaimVisualizer;
+import dev.twme.claimVisualizer.config.ConfigManager;
 import dev.twme.claimVisualizer.player.PlayerSession;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -39,6 +40,24 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             case "off" -> disableVisualization(player);
             case "reload" -> reloadPlugin(player);
             case "help" -> sendHelpMessage(player);
+            case "mode" -> {
+                if (!player.hasPermission("claimvisualizer.use")) {
+                    player.sendMessage(ChatColor.RED + "您沒有權限使用此功能！");
+                    return true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage(ChatColor.YELLOW + "請指定模式: CORNERS, OUTLINE, FULL, WALL");
+                    return true;
+                }
+                try {
+                    ConfigManager.DisplayMode mode = ConfigManager.DisplayMode.valueOf(args[1].toUpperCase());
+                    PlayerSession session = PlayerSession.getSession(player);
+                    session.setDisplayMode(mode);
+                    player.sendMessage(ChatColor.GREEN + "已設定粒子顯示模式為：" + mode);
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(ChatColor.RED + "無效的模式！可用模式: CORNERS, OUTLINE, FULL, WALL");
+                }
+            }
             default -> sendUnknownCommandMessage(player);
         }
 
@@ -103,6 +122,7 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.YELLOW + "/claimvisual " + ChatColor.WHITE + "- 切換領地視覺化效果");
         player.sendMessage(ChatColor.YELLOW + "/claimvisual on " + ChatColor.WHITE + "- 啟用領地視覺化效果");
         player.sendMessage(ChatColor.YELLOW + "/claimvisual off " + ChatColor.WHITE + "- 停用領地視覺化效果");
+        player.sendMessage(ChatColor.YELLOW + "/claimvisual mode <模式>" + ChatColor.WHITE + "- 設定粒子顯示模式 (CORNERS, OUTLINE, FULL, WALL)");
         
         if (player.hasPermission("claimvisualizer.reload")) {
             player.sendMessage(ChatColor.YELLOW + "/claimvisual reload " + ChatColor.WHITE + "- 重新載入插件設定");
@@ -118,17 +138,19 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> options = new ArrayList<>(Arrays.asList("on", "off", "help"));
-            
+            List<String> options = new ArrayList<>(Arrays.asList("on", "off", "help", "mode"));
             if (sender.hasPermission("claimvisualizer.reload")) {
                 options.add("reload");
             }
-            
             return options.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("mode")) {
+            List<String> modes = new ArrayList<>(Arrays.asList("CORNERS", "OUTLINE", "FULL", "WALL"));
+            return modes.stream()
+                    .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
         }
-        
         return new ArrayList<>();
     }
 }

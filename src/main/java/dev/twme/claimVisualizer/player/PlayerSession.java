@@ -1,5 +1,6 @@
 package dev.twme.claimVisualizer.player;
 
+import dev.twme.claimVisualizer.config.ConfigManager;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -13,11 +14,14 @@ public class PlayerSession {
     private final UUID playerId;
     private boolean visualizationEnabled;
     private long lastUpdateTime;
+    // 新增：玩家自訂的粒子顯示模式 (若為 null 表示使用預設設定)
+    private ConfigManager.DisplayMode displayMode;
     
     private PlayerSession(UUID playerId) {
         this.playerId = playerId;
         this.visualizationEnabled = false;
         this.lastUpdateTime = System.currentTimeMillis();
+        this.displayMode = null; // 使用預設模式
     }
     
     public static PlayerSession getSession(Player player) {
@@ -59,5 +63,14 @@ public class PlayerSession {
     
     public UUID getPlayerId() {
         return playerId;
+    }
+    
+    public ConfigManager.DisplayMode getDisplayMode() {
+        return displayMode;
+    }
+    
+    public void setDisplayMode(ConfigManager.DisplayMode mode) {
+        this.displayMode = mode;
+        this.lastUpdateTime = System.currentTimeMillis();
     }
 }
