@@ -7,9 +7,11 @@ particles:
   # Render distance (in blocks)
   render-distance: 20
   # Particle spacing (in blocks)
-  spacing: 1.0
+  spacing: 0.5
   # Particle display interval (in ticks) - How often to display a batch of particles
   display-interval: 1
+  # Player view angle range (in degrees) - The angle range in which particles are displayed
+  view-angle-range: 180.0
   
 # Particle settings for different claim types
 claim-types:
@@ -140,6 +142,6 @@ display:
   # Show town claims
   show-town-claims: true
   # Wall mode display radius
-  wall-radius: 3.0
+  wall-radius: 3.5
   # OUTLINE mode display radius
-  outline-radius: 4.0
+  outline-radius: 6.0

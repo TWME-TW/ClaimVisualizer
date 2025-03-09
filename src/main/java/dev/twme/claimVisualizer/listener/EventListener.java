@@ -42,7 +42,7 @@ public class EventListener implements Listener {
             event.getPlayer().hasPermission("claimvisualizer.use")) {
             session.setVisualizationEnabled(true);
             
-            // 延遲1秒後渲染領地，確保玩家已完全載入
+            // 延遲2秒後渲染領地，確保玩家已完全載入
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
                     renderer.renderClaims(event.getPlayer());
@@ -51,7 +51,7 @@ public class EventListener implements Listener {
                     event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.auto_enable", event.getPlayer()));
                     event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.help.toggle_hint", event.getPlayer()));
                 }
-            }, 20L); // 20 ticks = 1秒
+            }, 40L); // 40 ticks = 2秒
         }
     }
 

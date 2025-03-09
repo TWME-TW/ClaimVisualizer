@@ -11,6 +11,7 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,37 @@ public class ParticleRenderer {
         this.plugin = plugin;
         this.claimManager = claimManager;
         this.configManager = plugin.getConfigManager();
+    }
+    
+    /**
+     * 新增：判斷位置是否在玩家面對的方向
+     * @param player 玩家
+     * @param location 要檢查的位置
+     * @return 是否在玩家視野範圍內
+     */
+    private boolean isInPlayerViewDirection(Player player, Location location) {
+        // 確保不是同一世界時直接返回 false
+        if (!player.getWorld().equals(location.getWorld())) {
+            return false;
+        }
+        
+        Location playerLoc = player.getLocation();
+        
+        // 計算方向向量
+        Vector playerDirection = player.getLocation().getDirection().normalize();
+        Vector toLocation = location.clone().subtract(playerLoc).toVector().normalize();
+        
+        // 計算夾角的餘弦值
+        double dotProduct = playerDirection.dot(toLocation);
+        
+        // 轉換為角度（弧度）
+        double angleRadians = Math.acos(dotProduct);
+        
+        // 轉換為角度（度）
+        double angleDegrees = Math.toDegrees(angleRadians);
+        
+        // 如果角度小於設定的視野範圍一半，則在視野內
+        return angleDegrees <= configManager.getViewAngleRange() / 2;
     }
     
     /**
@@ -124,14 +156,20 @@ public class ParticleRenderer {
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                 List<Location> points = claim.getCornerPoints(5, playerY);
                 for (Location loc : points) {
-                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    // 修改：只收集在玩家視野內的粒子
+                    if (isInPlayerViewDirection(player, loc)) {
+                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    }
                 }
             } else if (mode == ConfigManager.DisplayMode.WALL) {
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                 List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                 for (Location loc : points) {
-                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    // 修改：只收集在玩家視野內的粒子
+                    if (isInPlayerViewDirection(player, loc)) {
+                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    }
                 }
             } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
                 double outlineRadius = configManager.getOutlineRadius();
@@ -141,7 +179,10 @@ public class ParticleRenderer {
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
                                 
                 for (Location loc : points) {
-                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    // 修改：只收集在玩家視野內的粒子
+                    if (isInPlayerViewDirection(player, loc)) {
+                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                    }
                 }
             } else {
                 for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
@@ -149,7 +190,10 @@ public class ParticleRenderer {
                             configManager.getParticleSettings(claim.getType(), part);
                     List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                     for (Location loc : points) {
-                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                        // 修改：只收集在玩家視野內的粒子
+                        if (isInPlayerViewDirection(player, loc)) {
+                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                        }
                     }
                 }
             }
@@ -182,14 +226,20 @@ public class ParticleRenderer {
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                         List<Location> points = claim.getCornerPoints(5, playerY);
                         for (Location loc : points) {
-                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            // 修改：只收集在玩家視野內的粒子
+                            if (isInPlayerViewDirection(player, loc)) {
+                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            }
                         }
                     } else if (mode == ConfigManager.DisplayMode.WALL) {
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                         for (Location loc : points) {
-                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            // 修改：只收集在玩家視野內的粒子
+                            if (isInPlayerViewDirection(player, loc)) {
+                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            }
                         }
                     } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
                         double outlineRadius = configManager.getOutlineRadius();
@@ -199,7 +249,10 @@ public class ParticleRenderer {
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
                                 
                         for (Location loc : points) {
-                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            // 修改：只收集在玩家視野內的粒子
+                            if (isInPlayerViewDirection(player, loc)) {
+                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            }
                         }
                     } else {
                         for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
@@ -207,7 +260,10 @@ public class ParticleRenderer {
                                     configManager.getParticleSettings(claim.getType(), part);
                             List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                             for (Location loc : points) {
-                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                                // 修改：只收集在玩家視野內的粒子
+                                if (isInPlayerViewDirection(player, loc)) {
+                                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                                }
                             }
                         }
                     }

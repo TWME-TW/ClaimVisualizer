@@ -28,6 +28,7 @@ public class ConfigManager {
     private double wallRadius;   // 牆面顯示半徑
     private double outlineRadius; // 新增：OUTLINE模式顯示半徑
     private int particleDisplayInterval; // 新增：粒子顯示間隔
+    private float viewAngleRange; // 新增：玩家視野角度範圍
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
@@ -46,6 +47,8 @@ public class ConfigManager {
         updateInterval = config.getInt("particles.update-interval", 10);
         renderDistance = config.getInt("particles.render-distance", 30);
         particleSpacing = config.getDouble("particles.spacing", 0.5);
+        // 新增：讀取視野角度設定
+        viewAngleRange = (float)config.getDouble("particles.view-angle-range", 90.0);
 
         // 載入性能設定
         maxClaims = config.getInt("performance.max-claims", 20);
@@ -172,6 +175,13 @@ public class ConfigManager {
     // 新增：取得粒子顯示間隔
     public int getParticleDisplayInterval() {
         return particleDisplayInterval;
+    }
+    
+    /**
+     * 獲取玩家視野角度範圍(度)
+     */
+    public float getViewAngleRange() {
+        return viewAngleRange;
     }
     
     /**
