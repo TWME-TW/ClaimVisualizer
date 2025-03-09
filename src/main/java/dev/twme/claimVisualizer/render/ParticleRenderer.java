@@ -101,7 +101,21 @@ public class ParticleRenderer {
                 for (Location loc : points) {
                     spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
                 }
+            } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
+                // 修改 OUTLINE 模式，使用設定中的半徑值
+                double outlineRadius = configManager.getOutlineRadius();
+                // 使用修改後的 getOutlineNearbyPoints 方法
+                List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
+                
+                // 對所有顯示的點都使用水平線的顏色設定
+                ConfigManager.ParticleSettings particleSettings = 
+                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
+                
+                for (Location loc : points) {
+                    spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
+                }
             } else {
+                // FULL 模式保持不變
                 for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                     ConfigManager.ParticleSettings particleSettings = 
                             configManager.getParticleSettings(claim.getType(), part);
@@ -147,7 +161,21 @@ public class ParticleRenderer {
                         for (Location loc : points) {
                             particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                         }
+                    } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
+                        // 修改 OUTLINE 模式，使用設定中的半徑值
+                        double outlineRadius = configManager.getOutlineRadius();
+                        // 使用修改後的 getOutlineNearbyPoints 方法
+                        List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
+                        
+                        // 對所有顯示的點都使用水平線的顏色設定
+                        ConfigManager.ParticleSettings particleSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
+                                
+                        for (Location loc : points) {
+                            particleData.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                        }
                     } else {
+                        // FULL 模式保持不變
                         for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                             ConfigManager.ParticleSettings particleSettings = 
                                     configManager.getParticleSettings(claim.getType(), part);

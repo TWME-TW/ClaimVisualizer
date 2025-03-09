@@ -139,3 +139,7 @@ display:
   show-admin-claims: true
   # 顯示城鎮領地
   show-town-claims: true
+  # 牆面模式顯示半徑
+  wall-radius: 3.0
+  # OUTLINE模式顯示半徑
+  outline-radius: 5.0

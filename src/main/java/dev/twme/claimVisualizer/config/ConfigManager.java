@@ -26,7 +26,8 @@ public class ConfigManager {
     private boolean showOthersClaims;
     private boolean showAdminClaims;
     private boolean showTownClaims;
-    private double wallRadius;   // 新增：牆面顯示半徑
+    private double wallRadius;   // 牆面顯示半徑
+    private double outlineRadius; // 新增：OUTLINE模式顯示半徑
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
@@ -60,8 +61,9 @@ public class ConfigManager {
         showAdminClaims = config.getBoolean("display.show-admin-claims", true);
         showTownClaims = config.getBoolean("display.show-town-claims", true);
         
-        // 新增讀取 wall-radius，預設值 3.0
+        // 讀取 wall-radius 和 outline-radius
         wallRadius = config.getDouble("display.wall-radius", 3.0);
+        outlineRadius = config.getDouble("display.outline-radius", 5.0); // 新增：OUTLINE模式顯示半徑
         
         // 載入不同領地類型的粒子設定
         loadParticleSettings();
@@ -163,6 +165,10 @@ public class ConfigManager {
     
     public double getWallRadius() {
         return wallRadius;
+    }
+    
+    public double getOutlineRadius() {
+        return outlineRadius;
     }
     
     /**

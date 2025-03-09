@@ -521,4 +521,52 @@ public class ClaimBoundary {
         }
         return points;
     }
+    
+    /**
+     * 獲取 OUTLINE 模式下附近的邊界點，只顯示玩家附近的水平輪廓
+     * @param playerLocation 玩家位置
+     * @param renderDistance 渲染距離
+     * @param spacing 粒子間距
+     * @param radius 顯示半徑
+     */
+    public List<Location> getOutlineNearbyPoints(Location playerLocation, int renderDistance, double spacing, double radius) {
+        List<Location> points = new ArrayList<>();
+        
+        // 先計算玩家與領地的最近點
+        Location nearestPoint = getNearestPoint(playerLocation);
+        
+        // 檢查最近點是否在渲染距離內
+        if (nearestPoint.distance(playerLocation) > renderDistance) {
+            return points;
+        }
+        
+        int playerY = playerLocation.getBlockY();
+        
+        // 只獲取玩家所在高度的水平線
+        List<Location> bottomPoints = getBottomPoints(spacing);
+        List<Location> topPoints = getTopPoints(spacing);
+        List<Location> horizontalPoints = getHorizontalPoints(spacing, playerY);
+        
+        // 添加所有水平線點
+        List<Location> allPoints = new ArrayList<>();
+        allPoints.addAll(horizontalPoints);
+        
+        // 如果玩家離底部或頂部很近，也添加那些點
+        if (Math.abs(playerY - minY) <= 3) {
+            allPoints.addAll(bottomPoints);
+        }
+        
+        if (Math.abs(playerY - maxY) <= 3) {
+            allPoints.addAll(topPoints);
+        }
+        
+        // 只保留距離最近點指定半徑內的點
+        for (Location loc : allPoints) {
+            if (loc.distance(nearestPoint) <= radius) {
+                points.add(loc);
+            }
+        }
+        
+        return points;
+    }
 }
