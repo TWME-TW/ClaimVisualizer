@@ -474,9 +474,9 @@ public class ClaimBoundary {
     }
     
     /**
-     * 獲取 WALL 模式下的粒子點
+     * 獲取 WALL 模式下的粒子點，新參數 wallRadius 由設定檔控制
      */
-    public List<Location> getWallModePoints(Location playerLocation, int renderDistance, double spacing) {
+    public List<Location> getWallModePoints(Location playerLocation, int renderDistance, double spacing, double wallRadius) {
         List<Location> points = new ArrayList<>();
         
         boolean isInside = isPlayerInside(playerLocation);
@@ -485,13 +485,12 @@ public class ClaimBoundary {
             List<WallFace> faces = getIntersectingFaces(playerLocation, renderDistance);
             for (WallFace face : faces) {
                 Location nearestPoint = getNearestPointOnFace(playerLocation, face);
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, face, spacing));
+                points.addAll(getWallPointsInRadius(nearestPoint, wallRadius, face, spacing));
             }
         } else {
             // 當玩家在領地外：根據玩家與領地最近點關係判斷要顯示的牆面個數
             Location nearestPoint = getNearestPoint(playerLocation);
             double tolerance = 1.0; // 定義允許偏差
-            // 根據玩家位置判斷候選面
             Set<WallFace> candidateFaces = new HashSet<>();
             if (playerLocation.getX() < minX + tolerance) candidateFaces.add(WallFace.WEST);
             if (playerLocation.getX() > maxX - tolerance) candidateFaces.add(WallFace.EAST);
@@ -500,7 +499,6 @@ public class ClaimBoundary {
             if (playerLocation.getZ() < minZ + tolerance) candidateFaces.add(WallFace.NORTH);
             if (playerLocation.getZ() > maxZ - tolerance) candidateFaces.add(WallFace.SOUTH);
             
-            // 若候選面為空則使用原先最小距離邏輯
             if (candidateFaces.isEmpty()) {
                 double distToWest = Math.abs(nearestPoint.getX() - minX);
                 double distToEast = Math.abs(nearestPoint.getX() - maxX);
@@ -516,9 +514,9 @@ public class ClaimBoundary {
                 else if (minDist == distToNorth) candidateFaces.add(WallFace.NORTH);
                 else if (minDist == distToSouth) candidateFaces.add(WallFace.SOUTH);
             }
-            // 針對所有候選面產生粒子點
+            
             for (WallFace face : candidateFaces) {
-                points.addAll(getWallPointsInRadius(nearestPoint, 3.0, face, spacing));
+                points.addAll(getWallPointsInRadius(nearestPoint, wallRadius, face, spacing));
             }
         }
         return points;

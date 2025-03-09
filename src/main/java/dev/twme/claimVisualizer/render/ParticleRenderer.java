@@ -100,7 +100,7 @@ public class ParticleRenderer {
                 // WALL 模式調用新方法
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
-                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing);
+                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                 for (Location loc : points) {
                     spawnParticle(player, particleSettings.getParticle(), loc, particleSettings.getColor());
                 }
@@ -153,7 +153,7 @@ public class ParticleRenderer {
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         
-                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing);
+                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
                         for (Location loc : points) {
                             particleData.add(new ParticleData(particleSettings.getParticle(), 
                                     loc, particleSettings.getColor()));
