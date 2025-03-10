@@ -18,6 +18,8 @@ command:
     reload: "<yellow>/claimvisual reload <white>- Reload configuration"
     help: "<yellow>/claimvisual help <white>- Show this help message"
     language: "<yellow>/claimvisual language <code> <white>- Change display language"
+    debug: "<yellow>/claimvisual debug particles <white>- Display particles per second"
+    debug_live: "<yellow>/claimvisual debug live <white>- Toggle continuous particles counter"
   mode:
     specify: "<yellow>Please specify mode: CORNERS, OUTLINE, FULL, WALL"
     set: "<green>Display mode set to: <yellow>{0}"
@@ -27,3 +29,9 @@ command:
     current: "<green>Your current language: <yellow>{0}"
     not_found: "<red>Language not found! Use /claimvisual language to see available languages."
     changed: "<green>Language changed successfully!"
+  debug:
+    particles: "<green>Current particles per second: <yellow>{0}"
+    particles_live: "<gray>[Particles/s: <yellow>{0}<gray>]"
+    usage: "<yellow>Usage: /claimvisual debug <particles|live>"
+    live_enabled: "<green>Continuous particle counter enabled."
+    live_disabled: "<yellow>Continuous particle counter disabled."
