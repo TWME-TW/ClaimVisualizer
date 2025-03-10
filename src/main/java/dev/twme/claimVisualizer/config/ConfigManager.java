@@ -154,8 +154,6 @@ public class ConfigManager {
                     settings.useViewAngleMethod = modeSection.getBoolean("use-view-angle-method", true);
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
-                } else if (mode == DisplayMode.CORNERS) {
-                    settings.cornerSize = modeSection.getInt("corner-size", 5);
                 } else if (mode == DisplayMode.FULL) {
                     settings.verticalRenderRange = modeSection.getInt("vertical-render-range", 10);
                     // 新增 FULL 模式特有設定
@@ -256,11 +254,6 @@ public class ConfigManager {
     // 新增：獲取特定模式的粒子顯示間隔
     public int getParticleDisplayInterval(DisplayMode mode) {
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).displayInterval : particleDisplayInterval;
-    }
-    
-    // 新增：獲取角落大小
-    public int getCornerSize(DisplayMode mode) {
-        return modeSettings.containsKey(mode) ? modeSettings.get(mode).cornerSize : 5;
     }
     
     public int getMaxClaims() {
@@ -433,7 +426,7 @@ public class ConfigManager {
     }
 
     public enum DisplayMode {
-        CORNERS, OUTLINE, FULL, WALL
+        OUTLINE, FULL, WALL
     }
     
     public enum ClaimPart {
@@ -460,7 +453,7 @@ public class ConfigManager {
         private double particleSpacing = 0.5; // 預設值
         private int displayInterval = 1; // 預設值
         private double radius = 5.0; // 半徑 (用於 WALL 和 OUTLINE 模式)
-        private int cornerSize = 5; // 角落大小 (用於 CORNERS 模式)
+        private int cornerSize = 5; // 角落大小 (保留但不再用於特定模式)
         private int verticalRenderRange = 10; // 垂直渲染範圍 (用於 FULL 模式)
         private boolean adaptiveDensity = true;  // 自適應粒子密度
         private double focusFactor = 1.5;        // 視線焦點增強因子

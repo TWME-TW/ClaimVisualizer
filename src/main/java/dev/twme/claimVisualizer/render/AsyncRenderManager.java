@@ -51,22 +51,7 @@ public class AsyncRenderManager {
                 List<ParticleData> allParticles = new ArrayList<>();
                 
                 for (ClaimBoundary claim : claims) {
-                    if (mode == ConfigManager.DisplayMode.CORNERS) {
-                        ConfigManager.ParticleSettings particleSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                        int cornerSize = configManager.getCornerSize(mode);
-                        
-                        // 使用頂部框架的粒子設定
-                        // 修正：移除多餘的 spacing 參數
-                        List<Location> cornerPoints = claim.getCornerPoints(cornerSize, playerY);
-                        for (Location loc : cornerPoints) {
-                            if (isInPlayerViewDirection(player, loc)) {
-                                allParticles.add(new ParticleData(particleSettings.getParticle(), 
-                                                                loc, 
-                                                                particleSettings.getColor()));
-                            }
-                        }
-                    } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
+                    if (mode == ConfigManager.DisplayMode.OUTLINE) {
                         double outlineRadius = configManager.getRadius(mode);
                         
                         // 使用輪廓框架的粒子設定
