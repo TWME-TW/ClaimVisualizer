@@ -29,20 +29,19 @@ public class ParticleRenderer {
     // 粒子佇列管理器
     private final ParticleQueueManager queueManager;
     
-    // 粒子計數器
-    private final Map<UUID, AtomicInteger> playerParticleCounter = new ConcurrentHashMap<>();
-    private BukkitTask counterResetTask;
-    
-    // 追蹤已啟用粒子計數實時顯示的管理員
-    private final Set<UUID> particleCounterDisplay = new HashSet<>();
+    // 粒子統計管理器
+    private final ParticleStatisticsManager statisticsManager;
 
     public ParticleRenderer(ClaimVisualizer plugin, ClaimManager claimManager) {
         this.plugin = plugin;
         this.claimManager = claimManager;
         this.configManager = plugin.getConfigManager();
         
-        // 初始化粒子佇列管理器
-        this.queueManager = new ParticleQueueManager(plugin, configManager, playerParticleCounter);
+        // 初始化統計管理器
+        this.statisticsManager = new ParticleStatisticsManager(plugin);
+        
+        // 初始化粒子佇列管理器 (使用統計管理器的參考)
+        this.queueManager = new ParticleQueueManager(plugin, configManager, statisticsManager);
     }
 
     /**
@@ -67,24 +66,9 @@ public class ParticleRenderer {
         
         // 啟動粒子佇列管理器
         queueManager.startParticleDisplayTasks();
-
-        // 啟動粒子計數器重置任務 (每秒重置一次)
-        counterResetTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                // 為啟用了實時粒子計數顯示的玩家顯示統計資訊
-                for (UUID playerId : particleCounterDisplay) {
-                    Player player = plugin.getServer().getPlayer(playerId);
-                    if (player != null && player.isOnline()) {
-                        int count = playerParticleCounter.getOrDefault(playerId, new AtomicInteger(0)).get();
-                        player.sendActionBar(plugin.getLanguageManager().getMessage("command.debug.particles_live", player, count));
-                    }
-                }
-                
-                // 重置所有玩家的粒子計數
-                playerParticleCounter.clear();
-            }
-        }.runTaskTimer(plugin, 20, 20); // 每 20 ticks (1秒) 執行一次
+        
+        // 啟動統計管理器
+        statisticsManager.startStatisticsTask();
     }
 
     /**
@@ -107,11 +91,8 @@ public class ParticleRenderer {
         // 停止粒子佇列管理器
         queueManager.stopParticleDisplayTasks();
 
-        // 停止粒子計數器重置任務
-        if (counterResetTask != null) {
-            counterResetTask.cancel();
-            counterResetTask = null;
-        }
+        // 停止統計管理器
+        statisticsManager.stopStatisticsTask();
     }
 
     /**
@@ -393,29 +374,23 @@ public class ParticleRenderer {
     }
 
     /**
-     * 獲取玩家當前的每秒粒子數
+     * 取得玩家每秒粒子數量
      */
     public int getPlayerParticlesPerSecond(UUID playerId) {
-        return playerParticleCounter.getOrDefault(playerId, new AtomicInteger(0)).get();
+        return statisticsManager.getPlayerParticlesPerSecond(playerId);
     }
-
+    
     /**
-     * 啟用或停用粒子計數實時顯示
+     * 切換玩家粒子計數顯示
      */
     public boolean toggleParticleCounterDisplay(UUID playerId) {
-        if (particleCounterDisplay.contains(playerId)) {
-            particleCounterDisplay.remove(playerId);
-            return false;
-        } else {
-            particleCounterDisplay.add(playerId);
-            return true;
-        }
+        return statisticsManager.toggleParticleCounterDisplay(playerId);
     }
-
+    
     /**
-     * 查詢玩家是否已啟用粒子計數實時顯示
+     * 檢查玩家是否已啟用粒子計數顯示
      */
     public boolean isParticleCounterDisplayEnabled(UUID playerId) {
-        return particleCounterDisplay.contains(playerId);
+        return statisticsManager.isParticleCounterDisplayEnabled(playerId);
     }
 }

@@ -28,19 +28,19 @@ public class ParticleQueueManager {
     // 粒子分批大小
     private static final int PARTICLE_BATCH_SIZE = 20;
     
-    // 粒子計數器 (供統計使用)
-    private final Map<UUID, AtomicInteger> playerParticleCounter;
+    // 粒子統計管理器參考
+    private final ParticleStatisticsManager statisticsManager;
     
     /**
      * 建立粒子佇列管理器
      * @param plugin 插件主類別
      * @param configManager 設定管理器
-     * @param playerParticleCounter 玩家粒子計數器參考
+     * @param statisticsManager 粒子統計管理器
      */
-    public ParticleQueueManager(ClaimVisualizer plugin, ConfigManager configManager, Map<UUID, AtomicInteger> playerParticleCounter) {
+    public ParticleQueueManager(ClaimVisualizer plugin, ConfigManager configManager, ParticleStatisticsManager statisticsManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        this.playerParticleCounter = playerParticleCounter;
+        this.statisticsManager = statisticsManager;
         
         // 初始化每種模式的佇列
         for (ConfigManager.DisplayMode mode : ConfigManager.DisplayMode.values()) {
@@ -135,8 +135,8 @@ public class ParticleQueueManager {
             player.spawnParticle(particle, location, 1, 0, 0, 0, 0);
         }
 
-        // 增加粒子計數
-        playerParticleCounter.computeIfAbsent(player.getUniqueId(), k -> new AtomicInteger(0)).incrementAndGet();
+        // 更新統計數據
+        statisticsManager.incrementPlayerParticleCount(player.getUniqueId());
     }
     
     /**
