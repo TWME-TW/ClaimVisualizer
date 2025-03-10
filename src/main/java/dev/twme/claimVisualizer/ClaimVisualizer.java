@@ -94,4 +94,8 @@ public final class ClaimVisualizer extends JavaPlugin {
     public LanguageManager getLanguageManager() {
         return languageManager;
     }
+    
+    public ParticleRenderer getParticleRenderer() {
+        return particleRenderer;
+    }
 }

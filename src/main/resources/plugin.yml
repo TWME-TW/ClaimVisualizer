@@ -8,7 +8,7 @@ authors: [twme]
 commands:
   claimvisual:
     description: Main command for claim visualization plugin
-    usage: /claimvisual [on|off|reload|help|mode|language]
+    usage: /claimvisual [on|off|reload|help|mode|language|debug]
     aliases: [cv, claimviz]
 permissions:
   claimvisualizer.use:
@@ -23,3 +23,6 @@ permissions:
   claimvisualizer.autoenable:
     description: Automatically enable claim visualization when joining the server
     default: false
+  claimvisualizer.debug:
+    description: Allow using debug commands
+    default: op

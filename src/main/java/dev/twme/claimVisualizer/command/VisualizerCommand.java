@@ -46,6 +46,7 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             case "help" -> sendHelpMessage(player);
             case "mode" -> handleModeCommand(player, args);
             case "language", "lang" -> handleLanguageCommand(player, args);
+            case "debug" -> handleDebugCommand(player, args);
             default -> player.sendMessage(languageManager.getMessage("command.unknown", player));
         }
 
@@ -113,6 +114,33 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(languageManager.getMessage("command.mode.set", player, mode));
         } catch (IllegalArgumentException e) {
             player.sendMessage(languageManager.getMessage("command.mode.invalid", player));
+        }
+    }
+
+    private void handleDebugCommand(Player player, String[] args) {
+        if (!player.hasPermission("claimvisualizer.debug")) {
+            player.sendMessage(languageManager.getMessage("command.no_permission", player));
+            return;
+        }
+        
+        if (args.length > 1) {
+            if (args[1].equalsIgnoreCase("particles")) {
+                // 顯示一次性的粒子數量統計
+                int particlesPerSecond = plugin.getParticleRenderer().getPlayerParticlesPerSecond(player.getUniqueId());
+                player.sendMessage(languageManager.getMessage("command.debug.particles", player, particlesPerSecond));
+            } else if (args[1].equalsIgnoreCase("live")) {
+                // 切換實時粒子計數顯示
+                boolean enabled = plugin.getParticleRenderer().toggleParticleCounterDisplay(player.getUniqueId());
+                if (enabled) {
+                    player.sendMessage(languageManager.getMessage("command.debug.live_enabled", player));
+                } else {
+                    player.sendMessage(languageManager.getMessage("command.debug.live_disabled", player));
+                }
+            } else {
+                player.sendMessage(languageManager.getMessage("command.debug.usage", player));
+            }
+        } else {
+            player.sendMessage(languageManager.getMessage("command.debug.usage", player));
         }
     }
 
@@ -184,6 +212,11 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(languageManager.getMessage("command.help.reload", player));
         }
         
+        if (player.hasPermission("claimvisualizer.debug")) {
+            player.sendMessage(languageManager.getMessage("command.help.debug", player));
+            player.sendMessage(languageManager.getMessage("command.help.debug_live", player));
+        }
+        
         player.sendMessage(languageManager.getMessage("command.help.help", player));
     }
 
@@ -199,6 +232,10 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
             
             if (sender.hasPermission("claimvisualizer.reload")) {
                 options.add("reload");
+            }
+            
+            if (sender.hasPermission("claimvisualizer.debug")) {
+                options.add("debug");
             }
             
             return options.stream()
@@ -218,6 +255,10 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
                             .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
                             .collect(Collectors.toList());
                 }
+            } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("claimvisualizer.debug")) {
+                return Arrays.asList("particles", "live").stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
             }
         }
         return new ArrayList<>();

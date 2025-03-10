@@ -18,6 +18,8 @@ command:
     reload: "<yellow>/claimvisual reload <white>- 重新載入插件設定"
     help: "<yellow>/claimvisual help <white>- 顯示此幫助訊息"
     language: "<yellow>/claimvisual language <語言代碼> <white>- 變更顯示語言"
+    debug: "<yellow>/claimvisual debug particles <white>- 顯示每秒粒子數"
+    debug_live: "<yellow>/claimvisual debug live <white>- 切換持續粒子計數顯示"
   mode:
     specify: "<yellow>請指定模式: CORNERS, OUTLINE, FULL, WALL"
     set: "<green>已設定粒子顯示模式為：<yellow>{0}"
@@ -27,3 +29,9 @@ command:
     current: "<green>您目前的語言：<yellow>{0}"
     not_found: "<red>找不到該語言！使用 /claimvisual language 查看可用語言。"
     changed: "<green>語言已成功變更！"
+  debug:
+    particles: "<green>目前每秒粒子數量: <yellow>{0}"
+    particles_live: "<gray>[每秒粒子數: <yellow>{0}<gray>]"
+    usage: "<yellow>用法: /claimvisual debug <particles|live>"
+    live_enabled: "<green>已啟用持續粒子計數顯示。"
+    live_disabled: "<yellow>已停用持續粒子計數顯示。"
