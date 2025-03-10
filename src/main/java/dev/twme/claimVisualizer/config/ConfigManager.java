@@ -129,6 +129,14 @@ public class ConfigManager {
                 // 載入模式特定的半徑設定
                 if (mode == DisplayMode.WALL) {
                     settings.radius = modeSection.getDouble("wall-radius", wallRadius);
+                    // 新增 WALL 模式特有設定
+                    settings.adaptiveDensity = modeSection.getBoolean("adaptive-density", true);
+                    settings.focusFactor = modeSection.getDouble("focus-factor", 1.8);
+                    settings.fadeDistance = modeSection.getDouble("fade-distance", 0.7);
+                    settings.edgeEmphasis = modeSection.getDouble("edge-emphasis", 2.0);
+                    settings.waveEffect = modeSection.getBoolean("wave-effect", true);
+                    settings.waveSpeed = modeSection.getDouble("wave-speed", 1.0);
+                    settings.waveIntensity = modeSection.getDouble("wave-intensity", 0.3);
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
                 } else if (mode == DisplayMode.CORNERS) {
@@ -346,6 +354,42 @@ public class ConfigManager {
         return 1.0;
     }
 
+    // 新增：獲取 WALL 模式相關設定方法
+    public boolean isWallAdaptiveDensity() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isAdaptiveDensity() : true;
+    }
+    
+    public double getWallFocusFactor() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFocusFactor() : 1.8;
+    }
+    
+    public double getWallFadeDistance() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFadeDistance() : 0.7;
+    }
+    
+    public double getWallEdgeEmphasis() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getEdgeEmphasis() : 2.0;
+    }
+    
+    public boolean isWallWaveEffect() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isWaveEffect() : true;
+    }
+    
+    public double getWallWaveSpeed() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getWaveSpeed() : 1.0;
+    }
+    
+    public double getWallWaveIntensity() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getWaveIntensity() : 0.3;
+    }
+
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
     }
@@ -381,6 +425,10 @@ public class ConfigManager {
         private double fadeDistance = 0.8;       // 淡出距離因子
         private double topBrightness = 1.2;      // 頂部亮度增強
         private double bottomBrightness = 0.8;   // 底部亮度降低
+        private double edgeEmphasis = 2.0;       // 邊緣強調程度
+        private boolean waveEffect = true;       // 波浪效果
+        private double waveSpeed = 1.0;          // 波浪速度
+        private double waveIntensity = 0.3;      // 波浪強度
         
         public int getUpdateInterval() {
             return updateInterval;
@@ -428,6 +476,22 @@ public class ConfigManager {
         
         public double getBottomBrightness() {
             return bottomBrightness;
+        }
+        
+        public double getEdgeEmphasis() {
+            return edgeEmphasis;
+        }
+        
+        public boolean isWaveEffect() {
+            return waveEffect;
+        }
+        
+        public double getWaveSpeed() {
+            return waveSpeed;
+        }
+        
+        public double getWaveIntensity() {
+            return waveIntensity;
         }
     }
     

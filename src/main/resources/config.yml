@@ -64,6 +64,20 @@ display-modes:
     display-interval: 1
     # Wall mode display radius
     wall-radius: 3.5
+    # Adaptive density - 動態調整粒子密度
+    adaptive-density: true
+    # Focus factor - 視線焦點增強係數
+    focus-factor: 1.8
+    # Fade distance - 淡出距離係數
+    fade-distance: 0.7
+    # Edge emphasis - 邊緣強調係數
+    edge-emphasis: 2.0
+    # Wave effect - 波浪效果
+    wave-effect: true
+    # Wave speed - 波浪速度
+    wave-speed: 1.0
+    # Wave intensity - 波浪強度
+    wave-intensity: 0.3
   
 # Particle settings for different claim types
 claim-types:

@@ -86,6 +86,90 @@ public class AsyncRenderManager {
                                 }
                             }
                         }
+                    } else if (mode == ConfigManager.DisplayMode.WALL) {
+                        // 使用模式特定的牆面半徑
+                        double wallRadius = configManager.getRadius(mode);
+                        
+                        // 獲取 WALL 模式的增強設定
+                        boolean adaptiveDensity = configManager.isWallAdaptiveDensity();
+                        double focusFactor = configManager.getWallFocusFactor();
+                        double fadeDistance = configManager.getWallFadeDistance();
+                        double edgeEmphasis = configManager.getWallEdgeEmphasis();
+                        boolean waveEffect = configManager.isWallWaveEffect();
+                        double waveSpeed = configManager.getWallWaveSpeed();
+                        double waveIntensity = configManager.getWallWaveIntensity();
+                        
+                        // 玩家視線方向向量
+                        Vector playerDirection = player.getLocation().getDirection();
+                        
+                        // 取得當前時間戳用於波浪效果
+                        long currentTimeMillis = System.currentTimeMillis();
+                        
+                        // 獲取粒子設定
+                        ConfigManager.ParticleSettings horizontalSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
+                        ConfigManager.ParticleSettings verticalSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
+                        ConfigManager.ParticleSettings cornerSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                                
+                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(
+                                player.getLocation(), renderDistance, spacing, wallRadius);
+                                
+                        for (ClaimBoundary.WallPoint point : points) {
+                            Location loc = point.getLocation();
+                            if (isInPlayerViewDirection(player, loc)) {
+                                // 自適應密度：根據距離決定是否渲染
+                                if (adaptiveDensity) {
+                                    double distance = player.getLocation().distance(loc);
+                                    double maxDistance = configManager.getRenderDistance(mode);
+                                    double relativeDistance = distance / maxDistance;
+                                    
+                                    // 根據距離計算渲染機率
+                                    double chance = calculateRenderChance(relativeDistance, fadeDistance);
+                                    
+                                    // 提高視線焦點區域的渲染機率
+                                    if (isInFocusArea(player, loc, playerDirection)) {
+                                        chance *= focusFactor;
+                                    }
+                                    
+                                    // 強化邊緣
+                                    if (point.isCorner() || point.isVertical()) {
+                                        chance *= edgeEmphasis;
+                                    }
+                                    
+                                    // 根據機率決定是否渲染
+                                    if (Math.random() > chance) {
+                                        continue;
+                                    }
+                                }
+                                
+                                // 波浪效果：根據時間和位置調整顏色亮度
+                                double brightnessFactor = 1.0;
+                                if (waveEffect) {
+                                    // 計算基於時間和位置的波浪效果
+                                    double waveOffset = (currentTimeMillis / 1000.0) * waveSpeed;
+                                    double locationFactor = (loc.getBlockX() + loc.getBlockY() + loc.getBlockZ()) * 0.1;
+                                    double waveFactor = Math.sin(waveOffset + locationFactor) * waveIntensity + 1.0;
+                                    brightnessFactor *= waveFactor;
+                                }
+                                
+                                // 根據點的屬性選擇適當的顏色
+                                if (point.isCorner()) {
+                                    // 角落點使用頂部框架的顏色，並增強亮度
+                                    Color adjustedColor = adjustColorBrightness(cornerSettings.getColor(), brightnessFactor * 1.5);
+                                    allParticles.add(new ParticleData(cornerSettings.getParticle(), loc, adjustedColor));
+                                } else if (point.isVertical()) {
+                                    // 垂直點使用垂直線的顏色，並適當增強
+                                    Color adjustedColor = adjustColorBrightness(verticalSettings.getColor(), brightnessFactor * 1.2);
+                                    allParticles.add(new ParticleData(verticalSettings.getParticle(), loc, adjustedColor));
+                                } else {
+                                    // 其他點使用水平線的顏色，正常亮度
+                                    Color adjustedColor = adjustColorBrightness(horizontalSettings.getColor(), brightnessFactor);
+                                    allParticles.add(new ParticleData(horizontalSettings.getParticle(), loc, adjustedColor));
+                                }
+                            }
+                        }
                     } else {
                         // 處理 FULL 模式
                         int verticalRange = configManager.getVerticalRenderRange(mode);
