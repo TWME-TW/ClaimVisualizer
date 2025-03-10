@@ -37,6 +37,13 @@ public class ConfigManager {
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
+    
+    // 新增：視角效果相關設定
+    private double viewAngleEffect = 0.6; // 預設視角效果強度 (0-1)
+
+    // 新增：顯示延遲設定
+    private int loginDelay;
+    private int worldChangeDelay;
 
     public ConfigManager(ClaimVisualizer plugin) {
         this.plugin = plugin;
@@ -77,6 +84,10 @@ public class ConfigManager {
         
         // 載入不同領地類型的粒子設定
         loadParticleSettings();
+
+        // 新增：載入延遲顯示設定
+        loginDelay = config.getInt("display-delay.login", 20);
+        worldChangeDelay = config.getInt("display-delay.world-change", 10);
     }
     
     // 新增：載入每種顯示模式的特定設定
@@ -129,12 +140,30 @@ public class ConfigManager {
                 // 載入模式特定的半徑設定
                 if (mode == DisplayMode.WALL) {
                     settings.radius = modeSection.getDouble("wall-radius", wallRadius);
+                    // 新增 WALL 模式特有設定
+                    settings.adaptiveDensity = modeSection.getBoolean("adaptive-density", true);
+                    settings.focusFactor = modeSection.getDouble("focus-factor", 1.8);
+                    settings.fadeDistance = modeSection.getDouble("fade-distance", 0.7);
+                    settings.edgeEmphasis = modeSection.getDouble("edge-emphasis", 2.0);
+                    settings.waveEffect = modeSection.getBoolean("wave-effect", true);
+                    settings.waveSpeed = modeSection.getDouble("wave-speed", 1.0);
+                    settings.waveIntensity = modeSection.getDouble("wave-intensity", 0.3);
+                    settings.viewAngleEffect = modeSection.getDouble("view-angle-effect", 0.6);
+                    // 新增兩種渲染方式的開關設定
+                    settings.useRaycastMethod = modeSection.getBoolean("use-raycast-method", true);
+                    settings.useViewAngleMethod = modeSection.getBoolean("use-view-angle-method", true);
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
                 } else if (mode == DisplayMode.CORNERS) {
                     settings.cornerSize = modeSection.getInt("corner-size", 5);
                 } else if (mode == DisplayMode.FULL) {
                     settings.verticalRenderRange = modeSection.getInt("vertical-render-range", 10);
+                    // 新增 FULL 模式特有設定
+                    settings.adaptiveDensity = modeSection.getBoolean("adaptive-density", true);
+                    settings.focusFactor = modeSection.getDouble("focus-factor", 1.5);
+                    settings.fadeDistance = modeSection.getDouble("fade-distance", 0.8);
+                    settings.topBrightness = modeSection.getDouble("top-brightness", 1.2);
+                    settings.bottomBrightness = modeSection.getDouble("bottom-brightness", 0.8);
                 }
             }
             
@@ -312,6 +341,97 @@ public class ConfigManager {
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).verticalRenderRange : 10;
     }
     
+    // 新增：獲取 FULL 模式相關設定方法
+    public boolean isAdaptiveDensity() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isAdaptiveDensity() : true;
+    }
+    
+    public double getFocusFactor() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFocusFactor() : 1.5;
+    }
+    
+    public double getFadeDistance() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFadeDistance() : 0.8;
+    }
+    
+    public double getPartBrightness(ClaimPart part) {
+        DisplayMode mode = DisplayMode.FULL;
+        if (!modeSettings.containsKey(mode)) return 1.0;
+        
+        if (part == ClaimPart.TOP) {
+            return modeSettings.get(mode).getTopBrightness();
+        } else if (part == ClaimPart.BOTTOM) {
+            return modeSettings.get(mode).getBottomBrightness();
+        }
+        return 1.0;
+    }
+
+    // 新增：獲取 WALL 模式相關設定方法
+    public boolean isWallAdaptiveDensity() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isAdaptiveDensity() : true;
+    }
+    
+    public double getWallFocusFactor() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFocusFactor() : 1.8;
+    }
+    
+    public double getWallFadeDistance() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFadeDistance() : 0.7;
+    }
+    
+    public double getWallEdgeEmphasis() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getEdgeEmphasis() : 2.0;
+    }
+    
+    public boolean isWallWaveEffect() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isWaveEffect() : true;
+    }
+    
+    public double getWallWaveSpeed() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getWaveSpeed() : 1.0;
+    }
+    
+    public double getWallWaveIntensity() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getWaveIntensity() : 0.3;
+    }
+    
+    public double getWallViewAngleEffect() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).viewAngleEffect : viewAngleEffect;
+    }
+    
+    // 新增：獲取 WALL 模式射線渲染方法開關
+    public boolean isWallUseRaycastMethod() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).useRaycastMethod : true;
+    }
+    
+    // 新增：獲取 WALL 模式視角渲染方法開關
+    public boolean isWallUseViewAngleMethod() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).useViewAngleMethod : true;
+    }
+
+    // 新增：獲取登入延遲時間
+    public int getLoginDelay() {
+        return loginDelay;
+    }
+    
+    // 新增：獲取世界切換延遲時間
+    public int getWorldChangeDelay() {
+        return worldChangeDelay;
+    }
+
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
     }
@@ -342,6 +462,18 @@ public class ConfigManager {
         private double radius = 5.0; // 半徑 (用於 WALL 和 OUTLINE 模式)
         private int cornerSize = 5; // 角落大小 (用於 CORNERS 模式)
         private int verticalRenderRange = 10; // 垂直渲染範圍 (用於 FULL 模式)
+        private boolean adaptiveDensity = true;  // 自適應粒子密度
+        private double focusFactor = 1.5;        // 視線焦點增強因子
+        private double fadeDistance = 0.8;       // 淡出距離因子
+        private double topBrightness = 1.2;      // 頂部亮度增強
+        private double bottomBrightness = 0.8;   // 底部亮度降低
+        private double edgeEmphasis = 2.0;       // 邊緣強調程度
+        private boolean waveEffect = true;       // 波浪效果
+        private double waveSpeed = 1.0;          // 波浪速度
+        private double waveIntensity = 0.3;      // 波浪強度
+        public double viewAngleEffect = 0.6;  // 視角效果強度 (0-1)
+        private boolean useRaycastMethod = true;   // 是否使用射線渲染方法
+        private boolean useViewAngleMethod = true; // 是否使用視角渲染方法
         
         public int getUpdateInterval() {
             return updateInterval;
@@ -369,6 +501,50 @@ public class ConfigManager {
         
         public int getVerticalRenderRange() {
             return verticalRenderRange;
+        }
+        
+        public boolean isAdaptiveDensity() {
+            return adaptiveDensity;
+        }
+        
+        public double getFocusFactor() {
+            return focusFactor;
+        }
+        
+        public double getFadeDistance() {
+            return fadeDistance;
+        }
+        
+        public double getTopBrightness() {
+            return topBrightness;
+        }
+        
+        public double getBottomBrightness() {
+            return bottomBrightness;
+        }
+        
+        public double getEdgeEmphasis() {
+            return edgeEmphasis;
+        }
+        
+        public boolean isWaveEffect() {
+            return waveEffect;
+        }
+        
+        public double getWaveSpeed() {
+            return waveSpeed;
+        }
+        
+        public double getWaveIntensity() {
+            return waveIntensity;
+        }
+        
+        public boolean isUseRaycastMethod() {
+            return useRaycastMethod;
+        }
+        
+        public boolean isUseViewAngleMethod() {
+            return useViewAngleMethod;
         }
     }
     
