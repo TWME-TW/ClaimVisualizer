@@ -23,26 +23,28 @@ public class ParticleRenderer {
     private final ConfigManager configManager;
     
     private BukkitTask renderTask;
-    private BukkitTask particleDisplayTask; // 新增：用於分批顯示粒子的任務
+    private final Map<ConfigManager.DisplayMode, BukkitTask> modeRenderTasks = new HashMap<>();
+    private final Map<ConfigManager.DisplayMode, BukkitTask> modeParticleDisplayTasks = new HashMap<>();
     
-    // 新增：玩家粒子佇列映射表
-    private final Map<UUID, Queue<List<ParticleData>>> playerParticleQueues = new ConcurrentHashMap<>();
+    // 新增：按顯示模式分類的玩家粒子佇列映射表
+    private final Map<ConfigManager.DisplayMode, Map<UUID, Queue<List<ParticleData>>>> modePlayerParticleQueues = new HashMap<>();
+    
     // 新增：粒子分批大小
     private static final int PARTICLE_BATCH_SIZE = 20;
-    // 新增：粒子顯示間隔（刻）
-    private static final int PARTICLE_DISPLAY_INTERVAL = 1;
     
     public ParticleRenderer(ClaimVisualizer plugin, ClaimManager claimManager) {
         this.plugin = plugin;
         this.claimManager = claimManager;
         this.configManager = plugin.getConfigManager();
+        
+        // 初始化每種模式的佇列
+        for (ConfigManager.DisplayMode mode : ConfigManager.DisplayMode.values()) {
+            modePlayerParticleQueues.put(mode, new ConcurrentHashMap<>());
+        }
     }
     
     /**
-     * 新增：判斷位置是否在玩家面對的方向
-     * @param player 玩家
-     * @param location 要檢查的位置
-     * @return 是否在玩家視野範圍內
+     * 判斷位置是否在玩家面對的方向
      */
     private boolean isInPlayerViewDirection(Player player, Location location) {
         // 確保不是同一世界時直接返回 false
@@ -73,30 +75,30 @@ public class ParticleRenderer {
      * 啟動渲染排程任務
      */
     public void startRenderTask() {
-        if (renderTask != null) {
-            renderTask.cancel();
+        // 停止所有現有任務
+        stopRenderTask();
+        
+        // 為每種顯示模式啟動獨立的渲染和顯示任務
+        for (ConfigManager.DisplayMode mode : ConfigManager.DisplayMode.values()) {
+            int updateInterval = configManager.getUpdateInterval(mode);
+            int displayInterval = configManager.getParticleDisplayInterval(mode);
+            
+            // 渲染任務 - 使用模式特定的更新間隔
+            modeRenderTasks.put(mode, new BukkitRunnable() {
+                @Override
+                public void run() {
+                    renderForAllPlayersWithMode(mode);
+                }
+            }.runTaskTimer(plugin, updateInterval, updateInterval));
+            
+            // 粒子顯示任務 - 使用模式特定的顯示間隔
+            modeParticleDisplayTasks.put(mode, new BukkitRunnable() {
+                @Override
+                public void run() {
+                    processParticleQueues(mode);
+                }
+            }.runTaskTimer(plugin, displayInterval, displayInterval));
         }
-        
-        if (particleDisplayTask != null) {
-            particleDisplayTask.cancel();
-        }
-        
-        int updateInterval = configManager.getUpdateInterval();
-        
-        renderTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                renderForAllPlayers();
-            }
-        }.runTaskTimer(plugin, updateInterval, updateInterval);
-        
-        // 新增：啟動粒子分批顯示任務
-        particleDisplayTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                processParticleQueues();
-            }
-        }.runTaskTimer(plugin, PARTICLE_DISPLAY_INTERVAL, PARTICLE_DISPLAY_INTERVAL);
     }
     
     /**
@@ -108,13 +110,25 @@ public class ParticleRenderer {
             renderTask = null;
         }
         
-        if (particleDisplayTask != null) {
-            particleDisplayTask.cancel();
-            particleDisplayTask = null;
+        // 停止所有模式特定的任務
+        for (BukkitTask task : modeRenderTasks.values()) {
+            if (task != null) {
+                task.cancel();
+            }
         }
+        modeRenderTasks.clear();
+        
+        for (BukkitTask task : modeParticleDisplayTasks.values()) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        modeParticleDisplayTasks.clear();
         
         // 清空所有粒子佇列
-        playerParticleQueues.clear();
+        for (Map<UUID, Queue<List<ParticleData>>> queues : modePlayerParticleQueues.values()) {
+            queues.clear();
+        }
     }
     
     /**
@@ -135,28 +149,62 @@ public class ParticleRenderer {
     }
     
     /**
+     * 新增：為所有使用特定顯示模式的玩家渲染粒子
+     */
+    private void renderForAllPlayersWithMode(ConfigManager.DisplayMode targetMode) {
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            PlayerSession session = PlayerSession.getSession(player);
+            
+            if (session.isVisualizationEnabled() && player.hasPermission("claimvisualizer.use")) {
+                // 取得玩家實際使用的顯示模式
+                ConfigManager.DisplayMode playerMode = session.getDisplayMode() != null ? 
+                                                      session.getDisplayMode() : 
+                                                      configManager.getDisplayMode();
+                
+                // 只處理與目標模式相同的玩家
+                if (playerMode == targetMode) {
+                    if (configManager.isAsyncRendering()) {
+                        renderClaimsAsync(player, playerMode);
+                    } else {
+                        renderClaims(player, playerMode);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
      * 為特定玩家渲染領地粒子
      */
     public void renderClaims(Player player) {
-        Set<ClaimBoundary> claims = claimManager.getNearbyClaims(player);
-        double spacing = configManager.getParticleSpacing();
         // 使用玩家自訂模式，如未設定則使用預設設定
         PlayerSession session = PlayerSession.getSession(player);
         ConfigManager.DisplayMode mode = (session.getDisplayMode() != null) ? session.getDisplayMode() : configManager.getDisplayMode();
         
+        renderClaims(player, mode);
+    }
+    
+    /**
+     * 為特定玩家渲染領地粒子，使用指定顯示模式
+     */
+    public void renderClaims(Player player, ConfigManager.DisplayMode mode) {
+        Set<ClaimBoundary> claims = claimManager.getNearbyClaims(player);
+        double spacing = configManager.getParticleSpacing(mode);
+        int renderDistance = configManager.getRenderDistance(mode);
         int playerY = player.getLocation().getBlockY();
-        int renderDistance = configManager.getRenderDistance();
         
-        // 新增：收集所有粒子資料而不是直接顯示
+        // 收集所有粒子資料
         List<ParticleData> allParticles = new ArrayList<>();
         
         for (ClaimBoundary claim : claims) {
             if (mode == ConfigManager.DisplayMode.CORNERS) {
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                List<Location> points = claim.getCornerPoints(5, playerY);
+                // 使用模式特定的角落大小
+                int cornerSize = configManager.getCornerSize(mode);
+                List<Location> points = claim.getCornerPoints(cornerSize, playerY);
                 for (Location loc : points) {
-                    // 修改：只收集在玩家視野內的粒子
+                    // 只收集在玩家視野內的粒子
                     if (isInPlayerViewDirection(player, loc)) {
                         allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                     }
@@ -164,22 +212,23 @@ public class ParticleRenderer {
             } else if (mode == ConfigManager.DisplayMode.WALL) {
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
-                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
+                // 使用模式特定的牆面半徑
+                double wallRadius = configManager.getRadius(mode);
+                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, wallRadius);
                 for (Location loc : points) {
-                    // 修改：只收集在玩家視野內的粒子
                     if (isInPlayerViewDirection(player, loc)) {
                         allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                     }
                 }
             } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
-                double outlineRadius = configManager.getOutlineRadius();
+                // 使用模式特定的輪廓半徑
+                double outlineRadius = configManager.getRadius(mode);
                 List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
                 
                 ConfigManager.ParticleSettings particleSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
                                 
                 for (Location loc : points) {
-                    // 修改：只收集在玩家視野內的粒子
                     if (isInPlayerViewDirection(player, loc)) {
                         allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                     }
@@ -190,7 +239,6 @@ public class ParticleRenderer {
                             configManager.getParticleSettings(claim.getType(), part);
                     List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                     for (Location loc : points) {
-                        // 修改：只收集在玩家視野內的粒子
                         if (isInPlayerViewDirection(player, loc)) {
                             allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                         }
@@ -199,24 +247,30 @@ public class ParticleRenderer {
             }
         }
         
-        // 新增：將收集的粒子資料分批並加入佇列
-        queueParticlesForPlayer(player.getUniqueId(), allParticles);
+        // 將收集的粒子資料分批並加入佇列，使用模式特定的佇列
+        queueParticlesForPlayer(player.getUniqueId(), allParticles, mode);
     }
     
     /**
      * 非同步渲染領地粒子
      */
     private void renderClaimsAsync(Player player) {
+        PlayerSession session = PlayerSession.getSession(player);
+        ConfigManager.DisplayMode mode = (session.getDisplayMode() != null) ? session.getDisplayMode() : configManager.getDisplayMode();
+        renderClaimsAsync(player, mode);
+    }
+    
+    /**
+     * 非同步渲染領地粒子，使用指定顯示模式
+     */
+    private void renderClaimsAsync(Player player, ConfigManager.DisplayMode mode) {
         new BukkitRunnable() {
             @Override
             public void run() {
                 Set<ClaimBoundary> claims = claimManager.getNearbyClaims(player);
-                double spacing = configManager.getParticleSpacing();
-                PlayerSession session = PlayerSession.getSession(player);
-                ConfigManager.DisplayMode mode = (session.getDisplayMode() != null) ? session.getDisplayMode() : configManager.getDisplayMode();
-                
+                double spacing = configManager.getParticleSpacing(mode);
+                int renderDistance = configManager.getRenderDistance(mode);
                 int playerY = player.getLocation().getBlockY();
-                int renderDistance = configManager.getRenderDistance();
                 
                 List<ParticleData> allParticles = new ArrayList<>();
                 
@@ -224,9 +278,9 @@ public class ParticleRenderer {
                     if (mode == ConfigManager.DisplayMode.CORNERS) {
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                        List<Location> points = claim.getCornerPoints(5, playerY);
+                        int cornerSize = configManager.getCornerSize(mode);
+                        List<Location> points = claim.getCornerPoints(cornerSize, playerY);
                         for (Location loc : points) {
-                            // 修改：只收集在玩家視野內的粒子
                             if (isInPlayerViewDirection(player, loc)) {
                                 allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                             }
@@ -234,22 +288,21 @@ public class ParticleRenderer {
                     } else if (mode == ConfigManager.DisplayMode.WALL) {
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
-                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, configManager.getWallRadius());
+                        double wallRadius = configManager.getRadius(mode);
+                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, wallRadius);
                         for (Location loc : points) {
-                            // 修改：只收集在玩家視野內的粒子
                             if (isInPlayerViewDirection(player, loc)) {
                                 allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                             }
                         }
                     } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
-                        double outlineRadius = configManager.getOutlineRadius();
+                        double outlineRadius = configManager.getRadius(mode);
                         List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
                         
                         ConfigManager.ParticleSettings particleSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
                                 
                         for (Location loc : points) {
-                            // 修改：只收集在玩家視野內的粒子
                             if (isInPlayerViewDirection(player, loc)) {
                                 allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                             }
@@ -260,7 +313,6 @@ public class ParticleRenderer {
                                     configManager.getParticleSettings(claim.getType(), part);
                             List<Location> points = claim.getPointsForPart(part, spacing, playerY);
                             for (Location loc : points) {
-                                // 修改：只收集在玩家視野內的粒子
                                 if (isInPlayerViewDirection(player, loc)) {
                                     allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
                                 }
@@ -269,11 +321,11 @@ public class ParticleRenderer {
                     }
                 }
                 
-                // 修改：切換回主執行緒，但只將粒子資料加入佇列而不是立即顯示
+                // 切換回主執行緒，將粒子資料加入佇列
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        queueParticlesForPlayer(player.getUniqueId(), allParticles);
+                        queueParticlesForPlayer(player.getUniqueId(), allParticles, mode);
                     }
                 }.runTask(plugin);
             }
@@ -281,14 +333,21 @@ public class ParticleRenderer {
     }
     
     /**
-     * 新增：將粒子資料分批並加入玩家的粒子佇列
+     * 將粒子資料分批並加入玩家的粒子佇列，依顯示模式分開處理
      */
-    private void queueParticlesForPlayer(UUID playerId, List<ParticleData> particleData) {
+    private void queueParticlesForPlayer(UUID playerId, List<ParticleData> particleData, ConfigManager.DisplayMode mode) {
         // 打亂粒子順序，使顯示更加自然
         Collections.shuffle(particleData);
         
-        // 清除玩家現有佇列
-        playerParticleQueues.remove(playerId);
+        // 取得該模式的佇列映射表
+        Map<UUID, Queue<List<ParticleData>>> modeQueues = modePlayerParticleQueues.get(mode);
+        if (modeQueues == null) {
+            modeQueues = new ConcurrentHashMap<>();
+            modePlayerParticleQueues.put(mode, modeQueues);
+        }
+        
+        // 清除玩家在該模式下的現有佇列
+        modeQueues.remove(playerId);
         
         // 建立新佇列
         Queue<List<ParticleData>> particleQueue = new LinkedList<>();
@@ -296,9 +355,10 @@ public class ParticleRenderer {
         // 將粒子分批
         int totalParticles = particleData.size();
         
-        // 計算每批次應包含的粒子數量
-        int updateInterval = configManager.getUpdateInterval();
-        int batchCount = Math.max(1, Math.min(updateInterval / PARTICLE_DISPLAY_INTERVAL, 20)); // 最多分20批
+        // 計算每批次應包含的粒子數量，使用模式特定的更新間隔
+        int updateInterval = configManager.getUpdateInterval(mode);
+        int displayInterval = configManager.getParticleDisplayInterval(mode);
+        int batchCount = Math.max(1, Math.min(updateInterval / displayInterval, 20)); // 最多分20批
         int particlesPerBatch = Math.max(1, totalParticles / batchCount);
         
         // 分批將粒子加入佇列
@@ -318,17 +378,21 @@ public class ParticleRenderer {
         }
         
         // 將佇列加入映射表
-        playerParticleQueues.put(playerId, particleQueue);
+        modeQueues.put(playerId, particleQueue);
     }
     
     /**
-     * 新增：處理所有玩家的粒子佇列，每次顯示一批粒子
+     * 處理特定模式的所有玩家粒子佇列，每次顯示一批粒子
      */
-    private void processParticleQueues() {
+    private void processParticleQueues(ConfigManager.DisplayMode mode) {
+        // 取得該模式的佇列映射表
+        Map<UUID, Queue<List<ParticleData>>> modeQueues = modePlayerParticleQueues.get(mode);
+        if (modeQueues == null) return;
+        
         // 為所有在線玩家處理粒子佇列
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             UUID playerId = player.getUniqueId();
-            Queue<List<ParticleData>> queue = playerParticleQueues.get(playerId);
+            Queue<List<ParticleData>> queue = modeQueues.get(playerId);
             
             if (queue != null && !queue.isEmpty()) {
                 // 從佇列取出一批粒子資料並顯示

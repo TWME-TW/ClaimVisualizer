@@ -14,9 +14,13 @@ public class ConfigManager {
     private final ClaimVisualizer plugin;
     private FileConfiguration config;
     
+    // 全域設定 (保留向下相容)
     private int updateInterval;
     private int renderDistance;
     private double particleSpacing;
+    private int particleDisplayInterval;
+    private float viewAngleRange;
+    
     private int maxClaims;
     private boolean asyncRendering;
     private int cacheTime;
@@ -25,10 +29,11 @@ public class ConfigManager {
     private boolean showOthersClaims;
     private boolean showAdminClaims;
     private boolean showTownClaims;
-    private double wallRadius;   // 牆面顯示半徑
-    private double outlineRadius; // 新增：OUTLINE模式顯示半徑
-    private int particleDisplayInterval; // 新增：粒子顯示間隔
-    private float viewAngleRange; // 新增：玩家視野角度範圍
+    private double wallRadius;
+    private double outlineRadius;
+    
+    // 新增：每種顯示模式的設定
+    private final Map<DisplayMode, ModeSettings> modeSettings = new HashMap<>();
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
@@ -43,11 +48,11 @@ public class ConfigManager {
         plugin.reloadConfig();
         config = plugin.getConfig();
         
-        // 載入基本設定
+        // 載入全域設定 (預設值，向下相容)
         updateInterval = config.getInt("particles.update-interval", 10);
-        renderDistance = config.getInt("particles.render-distance", 30);
+        renderDistance = config.getInt("particles.render-distance", 20);
         particleSpacing = config.getDouble("particles.spacing", 0.5);
-        // 新增：讀取視野角度設定
+        particleDisplayInterval = config.getInt("particles.display-interval", 1);
         viewAngleRange = (float)config.getDouble("particles.view-angle-range", 90.0);
 
         // 載入性能設定
@@ -63,15 +68,74 @@ public class ConfigManager {
         showAdminClaims = config.getBoolean("display.show-admin-claims", true);
         showTownClaims = config.getBoolean("display.show-town-claims", true);
         
-        // 讀取 wall-radius 和 outline-radius
+        // 讀取 wall-radius 和 outline-radius (向下相容)
         wallRadius = config.getDouble("display.wall-radius", 3.0);
-        outlineRadius = config.getDouble("display.outline-radius", 5.0); // 新增：OUTLINE模式顯示半徑
+        outlineRadius = config.getDouble("display.outline-radius", 5.0);
         
-        // 載入粒子顯示間隔
-        particleDisplayInterval = config.getInt("particles.display-interval", 1);
+        // 新增：載入每種顯示模式的特定設定
+        loadModeSettings();
         
         // 載入不同領地類型的粒子設定
         loadParticleSettings();
+    }
+    
+    // 新增：載入每種顯示模式的特定設定
+    private void loadModeSettings() {
+        modeSettings.clear();
+        ConfigurationSection modesSection = config.getConfigurationSection("display-modes");
+        
+        // 如果沒有找到模式特定設定，則使用全域設定作為預設值
+        if (modesSection == null) {
+            // 為每種顯示模式建立預設設定
+            for (DisplayMode mode : DisplayMode.values()) {
+                ModeSettings settings = new ModeSettings();
+                settings.updateInterval = updateInterval;
+                settings.renderDistance = renderDistance;
+                settings.particleSpacing = particleSpacing;
+                settings.displayInterval = particleDisplayInterval;
+                
+                // 針對特定模式設定特殊值
+                if (mode == DisplayMode.WALL) {
+                    settings.radius = wallRadius;
+                } else if (mode == DisplayMode.OUTLINE) {
+                    settings.radius = outlineRadius;
+                }
+                
+                modeSettings.put(mode, settings);
+            }
+            return;
+        }
+        
+        // 為每種顯示模式載入特定設定
+        for (DisplayMode mode : DisplayMode.values()) {
+            ConfigurationSection modeSection = modesSection.getConfigurationSection(mode.name());
+            ModeSettings settings = new ModeSettings();
+            
+            if (modeSection == null) {
+                // 如果沒有找到特定模式的設定，使用全域設定
+                settings.updateInterval = updateInterval;
+                settings.renderDistance = renderDistance;
+                settings.particleSpacing = particleSpacing;
+                settings.displayInterval = particleDisplayInterval;
+            } else {
+                // 載入模式特定設定
+                settings.updateInterval = modeSection.getInt("update-interval", updateInterval);
+                settings.renderDistance = modeSection.getInt("render-distance", renderDistance);
+                settings.particleSpacing = modeSection.getDouble("spacing", particleSpacing);
+                settings.displayInterval = modeSection.getInt("display-interval", particleDisplayInterval);
+                
+                // 載入模式特定的半徑設定
+                if (mode == DisplayMode.WALL) {
+                    settings.radius = modeSection.getDouble("wall-radius", wallRadius);
+                } else if (mode == DisplayMode.OUTLINE) {
+                    settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
+                } else if (mode == DisplayMode.CORNERS) {
+                    settings.cornerSize = modeSection.getInt("corner-size", 5);
+                }
+            }
+            
+            modeSettings.put(mode, settings);
+        }
     }
     
     private void loadParticleSettings() {
@@ -120,16 +184,50 @@ public class ConfigManager {
         }
     }
     
+    // 新增：獲取特定顯示模式的設定
+    public ModeSettings getModeSettings(DisplayMode mode) {
+        return modeSettings.getOrDefault(mode, new ModeSettings());
+    }
+    
+    // 向下相容方法
     public int getUpdateInterval() {
-        return updateInterval;
+        DisplayMode mode = getDisplayMode();
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).updateInterval : updateInterval;
+    }
+    
+    // 新增：獲取特定模式的更新間隔
+    public int getUpdateInterval(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).updateInterval : updateInterval;
     }
     
     public int getRenderDistance() {
-        return renderDistance;
+        DisplayMode mode = getDisplayMode();
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).renderDistance : renderDistance;
+    }
+    
+    // 新增：獲取特定模式的渲染距離
+    public int getRenderDistance(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).renderDistance : renderDistance;
     }
     
     public double getParticleSpacing() {
-        return particleSpacing;
+        DisplayMode mode = getDisplayMode();
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).particleSpacing : particleSpacing;
+    }
+    
+    // 新增：獲取特定模式的粒子間隔
+    public double getParticleSpacing(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).particleSpacing : particleSpacing;
+    }
+    
+    // 新增：獲取特定模式的粒子顯示間隔
+    public int getParticleDisplayInterval(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).displayInterval : particleDisplayInterval;
+    }
+    
+    // 新增：獲取角落大小
+    public int getCornerSize(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).cornerSize : 5;
     }
     
     public int getMaxClaims() {
@@ -165,28 +263,31 @@ public class ConfigManager {
     }
     
     public double getWallRadius() {
-        return wallRadius;
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).radius : wallRadius;
     }
     
     public double getOutlineRadius() {
-        return outlineRadius;
+        DisplayMode mode = DisplayMode.OUTLINE;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).radius : outlineRadius;
     }
     
-    // 新增：取得粒子顯示間隔
+    // 新增：獲取特定模式的半徑
+    public double getRadius(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).radius : 
+               (mode == DisplayMode.WALL ? wallRadius : 
+               (mode == DisplayMode.OUTLINE ? outlineRadius : 5.0));
+    }
+    
     public int getParticleDisplayInterval() {
-        return particleDisplayInterval;
+        DisplayMode mode = getDisplayMode();
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).displayInterval : particleDisplayInterval;
     }
     
-    /**
-     * 獲取玩家視野角度範圍(度)
-     */
     public float getViewAngleRange() {
         return viewAngleRange;
     }
     
-    /**
-     * 獲取特定領地類型和部分的粒子設定
-     */
     public ParticleSettings getParticleSettings(String claimType, ClaimPart part) {
         Map<ClaimPart, ParticleSettings> partSettings = claimTypeParticles.get(claimType);
         
@@ -198,9 +299,6 @@ public class ConfigManager {
         return new ParticleSettings(Particle.DUST, Color.WHITE);
     }
     
-    /**
-     * 向下相容的方法
-     */
     public ParticleSettings getParticleSettings(String claimType) {
         return getParticleSettings(claimType, ClaimPart.BOTTOM);
     }
@@ -209,9 +307,6 @@ public class ConfigManager {
         CORNERS, OUTLINE, FULL, WALL
     }
     
-    /**
-     * 領地的不同部分
-     */
     public enum ClaimPart {
         BOTTOM("bottom"),   // 底部邊框
         TOP("top"),         // 頂部邊框
@@ -226,6 +321,40 @@ public class ConfigManager {
         
         public String getConfigKey() {
             return configKey;
+        }
+    }
+    
+    // 新增：顯示模式特定設定類別
+    public static class ModeSettings {
+        private int updateInterval = 10; // 預設值
+        private int renderDistance = 20; // 預設值
+        private double particleSpacing = 0.5; // 預設值
+        private int displayInterval = 1; // 預設值
+        private double radius = 5.0; // 半徑 (用於 WALL 和 OUTLINE 模式)
+        private int cornerSize = 5; // 角落大小 (用於 CORNERS 模式)
+        
+        public int getUpdateInterval() {
+            return updateInterval;
+        }
+        
+        public int getRenderDistance() {
+            return renderDistance;
+        }
+        
+        public double getParticleSpacing() {
+            return particleSpacing;
+        }
+        
+        public int getDisplayInterval() {
+            return displayInterval;
+        }
+        
+        public double getRadius() {
+            return radius;
+        }
+        
+        public int getCornerSize() {
+            return cornerSize;
         }
     }
     
