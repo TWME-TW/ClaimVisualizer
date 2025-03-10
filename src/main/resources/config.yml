@@ -1,17 +1,57 @@
 # ClaimVisualizer Configuration File
 
-# Particle Settings
+# Global Particle Settings (fallback values)
 particles:
-  # Update frequency (in ticks)
-  update-interval: 10
-  # Render distance (in blocks)
-  render-distance: 20
-  # Particle spacing (in blocks)
-  spacing: 0.5
-  # Particle display interval (in ticks) - How often to display a batch of particles
-  display-interval: 1
   # Player view angle range (in degrees) - The angle range in which particles are displayed
   view-angle-range: 150
+
+# Display mode specific settings
+display-modes:
+  CORNERS:
+    # Update frequency (in ticks)
+    update-interval: 20
+    # Render distance (in blocks)
+    render-distance: 30
+    # Particle spacing (in blocks)
+    spacing: 1.0
+    # Particle display interval (in ticks) - How often to display a batch of particles
+    display-interval: 2
+    # Corner size in blocks
+    corner-size: 5
+  
+  OUTLINE:
+    # Update frequency (in ticks)
+    update-interval: 10
+    # Render distance (in blocks)
+    render-distance: 25
+    # Particle spacing (in blocks)
+    spacing: 0.5
+    # Particle display interval (in ticks)
+    display-interval: 1
+    # Outline display radius
+    outline-radius: 10.5
+  
+  FULL:
+    # Update frequency (in ticks)
+    update-interval: 20
+    # Render distance (in blocks)
+    render-distance: 20
+    # Particle spacing (in blocks)
+    spacing: 1.0
+    # Particle display interval (in ticks)
+    display-interval: 2
+  
+  WALL:
+    # Update frequency (in ticks)
+    update-interval: 5
+    # Render distance (in blocks)
+    render-distance: 15
+    # Particle spacing (in blocks)
+    spacing: 0.3
+    # Particle display interval (in ticks)
+    display-interval: 1
+    # Wall mode display radius
+    wall-radius: 3.5
   
 # Particle settings for different claim types
 claim-types:
@@ -141,7 +181,3 @@ display:
   show-admin-claims: true
   # Show town claims
   show-town-claims: true
-  # Wall mode display radius
-  wall-radius: 3.5
-  # OUTLINE mode display radius
-  outline-radius: 10.5
