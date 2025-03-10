@@ -33,15 +33,25 @@ display-modes:
   
   FULL:
     # Update frequency (in ticks)
-    update-interval: 15
+    update-interval: 10
     # Render distance (in blocks)
     render-distance: 20
     # Particle spacing (in blocks)
-    spacing: 0.5
+    spacing: 0.6
     # Particle display interval (in ticks)
     display-interval: 1
     # Vertical render range (in blocks) - Only render particles within this range above/below the player
-    vertical-render-range: 7
+    vertical-render-range: 15
+    # Adaptive density - Increase particle density based on player's view angle
+    adaptive-density: true
+    # Focus factor - Increase particle density based on player's focus
+    focus-factor: 1.5
+    # Fade distance - Distance from the player where particles start to fade out
+    fade-distance: 0.8
+    # Fade factor - Particle brightness fade factor
+    top-brightness: 1.2
+    # Fade factor - Particle brightness fade factor
+    bottom-brightness: 0.8
   
   WALL:
     # Update frequency (in ticks)

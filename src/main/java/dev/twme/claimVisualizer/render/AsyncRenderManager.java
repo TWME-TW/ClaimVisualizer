@@ -7,6 +7,8 @@ import dev.twme.claimVisualizer.config.ConfigManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+import org.bukkit.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,18 +87,58 @@ public class AsyncRenderManager {
                             }
                         }
                     } else {
-                        // 處理其他模式（WALL, FULL 等）
-                        // 為每種部分取得粒子設定
+                        // 處理 FULL 模式
+                        int verticalRange = configManager.getVerticalRenderRange(mode);
+                        boolean adaptiveDensity = configManager.isAdaptiveDensity();
+                        double focusFactor = configManager.getFocusFactor();
+                        double fadeDistance = configManager.getFadeDistance();
+                        
+                        // 玩家視線方向向量
+                        Vector playerDirection = player.getLocation().getDirection();
+                        
                         for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                             ConfigManager.ParticleSettings particleSettings = 
                                     configManager.getParticleSettings(claim.getType(), part);
                             
-                            // 取得該部分的所有點
-                            List<Location> points = claim.getPointsForPart(part, spacing, playerY);
+                            // 根據部位調整粒子顏色亮度
+                            Color adjustedColor = adjustColorBrightness(
+                                    particleSettings.getColor(), 
+                                    configManager.getPartBrightness(part));
+                            
+                            List<Location> points;
+                            if (part == ConfigManager.ClaimPart.TOP || part == ConfigManager.ClaimPart.VERTICAL) {
+                                points = claim.getPointsInVerticalRange(part, spacing, playerY, verticalRange);
+                            } else {
+                                // 對於水平線和底部，使用原始方法
+                                points = claim.getPointsForPart(part, spacing, playerY);
+                            }
                             
                             for (Location loc : points) {
                                 if (isInPlayerViewDirection(player, loc)) {
-                                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                                    // 自適應密度：根據距離決定是否渲染
+                                    if (adaptiveDensity) {
+                                        double distance = player.getLocation().distance(loc);
+                                        double maxDistance = configManager.getRenderDistance(mode);
+                                        double relativeDistance = distance / maxDistance;
+                                        
+                                        // 根據距離計算渲染機率
+                                        double chance = calculateRenderChance(relativeDistance, fadeDistance);
+                                        
+                                        // 提高視線焦點區域的渲染機率
+                                        if (isInFocusArea(player, loc, playerDirection)) {
+                                            chance *= focusFactor;
+                                        }
+                                        
+                                        // 根據機率決定是否渲染
+                                        if (Math.random() > chance) {
+                                            continue;
+                                        }
+                                    }
+                                    
+                                    allParticles.add(new ParticleData(
+                                            particleSettings.getParticle(), 
+                                            loc, 
+                                            adjustedColor));
                                 }
                             }
                         }
@@ -112,6 +154,49 @@ public class AsyncRenderManager {
                 }.runTask(plugin);
             }
         }.runTaskAsynchronously(plugin);
+    }
+    
+    /**
+     * 根據相對距離計算渲染機率
+     * @param relativeDistance 相對距離(0-1)
+     * @param fadeFactor 淡出因子
+     * @return 渲染機率(0-1)
+     */
+    private double calculateRenderChance(double relativeDistance, double fadeFactor) {
+        // 越近的點渲染機率越高
+        return Math.max(0, 1 - Math.pow(relativeDistance / fadeFactor, 2));
+    }
+    
+    /**
+     * 檢查位置是否在玩家視線焦點區域
+     */
+    private boolean isInFocusArea(Player player, Location location, Vector playerDirection) {
+        if (location.getWorld() != player.getWorld()) return false;
+        
+        Vector playerToLocation = location.clone().subtract(player.getEyeLocation()).toVector();
+        
+        // 規一化向量
+        playerDirection.normalize();
+        playerToLocation.normalize();
+        
+        // 計算兩個向量之間的角度（弧度）
+        double angle = Math.acos(playerDirection.dot(playerToLocation));
+        
+        // 轉換為度數並檢查是否在焦點範圍內(15度)
+        return Math.toDegrees(angle) <= 15;
+    }
+    
+    /**
+     * 調整顏色亮度
+     * @param original 原始顏色
+     * @param factor 亮度因子(>1增亮, <1減暗)
+     * @return 調整後的顏色
+     */
+    private Color adjustColorBrightness(Color original, double factor) {
+        int r = Math.min(255, Math.max(0, (int)(original.getRed() * factor)));
+        int g = Math.min(255, Math.max(0, (int)(original.getGreen() * factor)));
+        int b = Math.min(255, Math.max(0, (int)(original.getBlue() * factor)));
+        return Color.fromRGB(r, g, b);
     }
     
     /**

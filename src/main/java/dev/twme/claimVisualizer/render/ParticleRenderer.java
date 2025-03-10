@@ -212,12 +212,23 @@ public class ParticleRenderer {
                     }
                 }
             } else {
-                // FULL 模式 - 應用垂直渲染範圍限制
+                // FULL 模式 - 應用垂直渲染範圍限制和增強效果
                 int verticalRange = configManager.getVerticalRenderRange(mode);
+                boolean adaptiveDensity = configManager.isAdaptiveDensity();
+                double focusFactor = configManager.getFocusFactor();
+                double fadeDistance = configManager.getFadeDistance();
+                
+                // 玩家視線方向向量
+                Vector playerDirection = player.getLocation().getDirection();
                 
                 for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                     ConfigManager.ParticleSettings particleSettings = 
                             configManager.getParticleSettings(claim.getType(), part);
+                    
+                    // 根據部位調整粒子顏色亮度
+                    Color adjustedColor = adjustColorBrightness(
+                            particleSettings.getColor(), 
+                            configManager.getPartBrightness(part));
                     
                     // 使用新方法獲取垂直範圍內的點
                     List<Location> points;
@@ -230,7 +241,30 @@ public class ParticleRenderer {
                     
                     for (Location loc : points) {
                         if (isInPlayerViewDirection(player, loc)) {
-                            allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                            // 自適應密度：根據距離決定是否渲染
+                            if (adaptiveDensity) {
+                                double distance = player.getLocation().distance(loc);
+                                double maxDistance = configManager.getRenderDistance(mode);
+                                double relativeDistance = distance / maxDistance;
+                                
+                                // 根據距離計算渲染機率
+                                double chance = calculateRenderChance(relativeDistance, fadeDistance);
+                                
+                                // 提高視線焦點區域的渲染機率
+                                if (isInFocusArea(player, loc, playerDirection)) {
+                                    chance *= focusFactor;
+                                }
+                                
+                                // 根據機率決定是否渲染
+                                if (Math.random() > chance) {
+                                    continue;
+                                }
+                            }
+                            
+                            allParticles.add(new ParticleData(
+                                    particleSettings.getParticle(), 
+                                    loc, 
+                                    adjustedColor));
                         }
                     }
                 }
@@ -239,6 +273,49 @@ public class ParticleRenderer {
         
         // 將收集的粒子資料加入佇列，使用模式特定的佇列
         queueManager.queueParticlesForPlayer(player.getUniqueId(), allParticles, mode);
+    }
+    
+    /**
+     * 根據相對距離計算渲染機率
+     * @param relativeDistance 相對距離(0-1)
+     * @param fadeFactor 淡出因子
+     * @return 渲染機率(0-1)
+     */
+    private double calculateRenderChance(double relativeDistance, double fadeFactor) {
+        // 越近的點渲染機率越高
+        return Math.max(0, 1 - Math.pow(relativeDistance / fadeFactor, 2));
+    }
+    
+    /**
+     * 檢查位置是否在玩家視線焦點區域
+     */
+    private boolean isInFocusArea(Player player, Location location, Vector playerDirection) {
+        if (location.getWorld() != player.getWorld()) return false;
+        
+        Vector playerToLocation = location.clone().subtract(player.getEyeLocation()).toVector();
+        
+        // 規一化向量
+        playerDirection.normalize();
+        playerToLocation.normalize();
+        
+        // 計算兩個向量之間的角度（弧度）
+        double angle = Math.acos(playerDirection.dot(playerToLocation));
+        
+        // 轉換為度數並檢查是否在焦點範圍內(15度)
+        return Math.toDegrees(angle) <= 15;
+    }
+    
+    /**
+     * 調整顏色亮度
+     * @param original 原始顏色
+     * @param factor 亮度因子(>1增亮, <1減暗)
+     * @return 調整後的顏色
+     */
+    private Color adjustColorBrightness(Color original, double factor) {
+        int r = Math.min(255, Math.max(0, (int)(original.getRed() * factor)));
+        int g = Math.min(255, Math.max(0, (int)(original.getGreen() * factor)));
+        int b = Math.min(255, Math.max(0, (int)(original.getBlue() * factor)));
+        return Color.fromRGB(r, g, b);
     }
 
     /**

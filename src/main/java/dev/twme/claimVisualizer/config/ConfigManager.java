@@ -135,6 +135,12 @@ public class ConfigManager {
                     settings.cornerSize = modeSection.getInt("corner-size", 5);
                 } else if (mode == DisplayMode.FULL) {
                     settings.verticalRenderRange = modeSection.getInt("vertical-render-range", 10);
+                    // 新增 FULL 模式特有設定
+                    settings.adaptiveDensity = modeSection.getBoolean("adaptive-density", true);
+                    settings.focusFactor = modeSection.getDouble("focus-factor", 1.5);
+                    settings.fadeDistance = modeSection.getDouble("fade-distance", 0.8);
+                    settings.topBrightness = modeSection.getDouble("top-brightness", 1.2);
+                    settings.bottomBrightness = modeSection.getDouble("bottom-brightness", 0.8);
                 }
             }
             
@@ -312,6 +318,34 @@ public class ConfigManager {
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).verticalRenderRange : 10;
     }
     
+    // 新增：獲取 FULL 模式相關設定方法
+    public boolean isAdaptiveDensity() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).isAdaptiveDensity() : true;
+    }
+    
+    public double getFocusFactor() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFocusFactor() : 1.5;
+    }
+    
+    public double getFadeDistance() {
+        DisplayMode mode = DisplayMode.FULL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).getFadeDistance() : 0.8;
+    }
+    
+    public double getPartBrightness(ClaimPart part) {
+        DisplayMode mode = DisplayMode.FULL;
+        if (!modeSettings.containsKey(mode)) return 1.0;
+        
+        if (part == ClaimPart.TOP) {
+            return modeSettings.get(mode).getTopBrightness();
+        } else if (part == ClaimPart.BOTTOM) {
+            return modeSettings.get(mode).getBottomBrightness();
+        }
+        return 1.0;
+    }
+
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
     }
@@ -342,6 +376,11 @@ public class ConfigManager {
         private double radius = 5.0; // 半徑 (用於 WALL 和 OUTLINE 模式)
         private int cornerSize = 5; // 角落大小 (用於 CORNERS 模式)
         private int verticalRenderRange = 10; // 垂直渲染範圍 (用於 FULL 模式)
+        private boolean adaptiveDensity = true;  // 自適應粒子密度
+        private double focusFactor = 1.5;        // 視線焦點增強因子
+        private double fadeDistance = 0.8;       // 淡出距離因子
+        private double topBrightness = 1.2;      // 頂部亮度增強
+        private double bottomBrightness = 0.8;   // 底部亮度降低
         
         public int getUpdateInterval() {
             return updateInterval;
@@ -369,6 +408,26 @@ public class ConfigManager {
         
         public int getVerticalRenderRange() {
             return verticalRenderRange;
+        }
+        
+        public boolean isAdaptiveDensity() {
+            return adaptiveDensity;
+        }
+        
+        public double getFocusFactor() {
+            return focusFactor;
+        }
+        
+        public double getFadeDistance() {
+            return fadeDistance;
+        }
+        
+        public double getTopBrightness() {
+            return topBrightness;
+        }
+        
+        public double getBottomBrightness() {
+            return bottomBrightness;
         }
     }
     
