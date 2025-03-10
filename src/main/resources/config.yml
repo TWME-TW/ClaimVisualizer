@@ -81,6 +81,9 @@ display-modes:
     # 視角效果強度 (0-1)，決定視線中心與邊緣的渲染半徑差異
     # 0 表示無效果，1 表示視線邊緣的範圍為中心的 0%
     view-angle-effect: 0.6
+    # 渲染方法開關
+    use-raycast-method: true      # 是否使用射線檢測渲染方法
+    use-view-angle-method: true   # 是否使用視角偵測渲染方法
   
 # Particle settings for different claim types
 claim-types:

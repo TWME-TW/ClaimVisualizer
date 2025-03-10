@@ -141,6 +141,9 @@ public class ConfigManager {
                     settings.waveSpeed = modeSection.getDouble("wave-speed", 1.0);
                     settings.waveIntensity = modeSection.getDouble("wave-intensity", 0.3);
                     settings.viewAngleEffect = modeSection.getDouble("view-angle-effect", 0.6);
+                    // 新增兩種渲染方式的開關設定
+                    settings.useRaycastMethod = modeSection.getBoolean("use-raycast-method", true);
+                    settings.useViewAngleMethod = modeSection.getBoolean("use-view-angle-method", true);
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
                 } else if (mode == DisplayMode.CORNERS) {
@@ -398,6 +401,18 @@ public class ConfigManager {
         DisplayMode mode = DisplayMode.WALL;
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).viewAngleEffect : viewAngleEffect;
     }
+    
+    // 新增：獲取 WALL 模式射線渲染方法開關
+    public boolean isWallUseRaycastMethod() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).useRaycastMethod : true;
+    }
+    
+    // 新增：獲取 WALL 模式視角渲染方法開關
+    public boolean isWallUseViewAngleMethod() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).useViewAngleMethod : true;
+    }
 
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
@@ -439,6 +454,8 @@ public class ConfigManager {
         private double waveSpeed = 1.0;          // 波浪速度
         private double waveIntensity = 0.3;      // 波浪強度
         public double viewAngleEffect = 0.6;  // 視角效果強度 (0-1)
+        private boolean useRaycastMethod = true;   // 是否使用射線渲染方法
+        private boolean useViewAngleMethod = true; // 是否使用視角渲染方法
         
         public int getUpdateInterval() {
             return updateInterval;
@@ -502,6 +519,14 @@ public class ConfigManager {
         
         public double getWaveIntensity() {
             return waveIntensity;
+        }
+        
+        public boolean isUseRaycastMethod() {
+            return useRaycastMethod;
+        }
+        
+        public boolean isUseViewAngleMethod() {
+            return useViewAngleMethod;
         }
     }
     

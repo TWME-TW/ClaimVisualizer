@@ -13,6 +13,9 @@ import org.bukkit.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * 非同步渲染管理器 - 負責處理非同步渲染領地粒子
@@ -99,6 +102,8 @@ public class AsyncRenderManager {
                         double waveSpeed = configManager.getWallWaveSpeed();
                         double waveIntensity = configManager.getWallWaveIntensity();
                         double viewAngleEffect = configManager.getWallViewAngleEffect();
+                        boolean useRaycastMethod = configManager.isWallUseRaycastMethod();
+                        boolean useViewAngleMethod = configManager.isWallUseViewAngleMethod();
                         
                         // 玩家視線方向向量
                         Vector playerDirection = player.getLocation().getDirection();
@@ -114,17 +119,25 @@ public class AsyncRenderManager {
                         ConfigManager.ParticleSettings cornerSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                         
-                        // 同時獲取兩種渲染方式的點 - 合併渲染效果
-                        List<ClaimBoundary.WallPoint> points = new ArrayList<>();
-                                
+                        // 收集兩種方法產生的所有點
+                        List<ClaimBoundary.WallPoint> raycastPoints = new ArrayList<>();
+                        List<ClaimBoundary.WallPoint> viewAnglePoints = new ArrayList<>();
+                        
                         // 使用視線射線檢測的方法
-                        points.addAll(claim.getWallModePointsWithRaycast(
-                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius));
+                        if (useRaycastMethod) {
+                            raycastPoints.addAll(claim.getWallModePointsWithRaycast(
+                                    player.getLocation(), playerDirection, renderDistance, spacing, wallRadius));
+                        }
                                 
-                        // 同時使用原來的基於最近點的方法
-                        points.addAll(claim.getWallModePointsWithViewAngle(
-                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius, viewAngleEffect));
-                                
+                        // 使用基於最近點和視角的方法
+                        if (useViewAngleMethod) {
+                            viewAnglePoints.addAll(claim.getWallModePointsWithViewAngle(
+                                    player.getLocation(), playerDirection, renderDistance, spacing, wallRadius, viewAngleEffect));
+                        }
+                        
+                        // 合併並去除重複點
+                        List<ClaimBoundary.WallPoint> points = removeDuplicateWallPoints(raycastPoints, viewAnglePoints);
+                        
                         for (ClaimBoundary.WallPoint point : points) {
                             Location loc = point.getLocation();
                             if (isInPlayerViewDirection(player, loc)) {
@@ -247,6 +260,82 @@ public class AsyncRenderManager {
                 }.runTask(plugin);
             }
         }.runTaskAsynchronously(plugin);
+    }
+    
+    /**
+     * 合併並移除重複的牆面點
+     * @param list1 第一個點列表
+     * @param list2 第二個點列表
+     * @return 合併後不含重複的點列表
+     */
+    private List<ClaimBoundary.WallPoint> removeDuplicateWallPoints(List<ClaimBoundary.WallPoint> list1, List<ClaimBoundary.WallPoint> list2) {
+        // 使用空間網格法來快速判斷鄰近點
+        // 網格大小設為粒子間距的一半，確保可以捕捉到重複點
+        double gridSize = 0.25;
+        Map<GridKey, ClaimBoundary.WallPoint> pointGrid = new HashMap<>();
+        List<ClaimBoundary.WallPoint> result = new ArrayList<>();
+        
+        // 處理第一個列表的點
+        for (ClaimBoundary.WallPoint point : list1) {
+            Location loc = point.getLocation();
+            GridKey key = new GridKey(
+                    Math.floor(loc.getX() / gridSize),
+                    Math.floor(loc.getY() / gridSize),
+                    Math.floor(loc.getZ() / gridSize)
+            );
+            
+            // 如果該網格尚未有點，則添加
+            if (!pointGrid.containsKey(key)) {
+                pointGrid.put(key, point);
+                result.add(point);
+            }
+        }
+        
+        // 處理第二個列表的點
+        for (ClaimBoundary.WallPoint point : list2) {
+            Location loc = point.getLocation();
+            GridKey key = new GridKey(
+                    Math.floor(loc.getX() / gridSize),
+                    Math.floor(loc.getY() / gridSize),
+                    Math.floor(loc.getZ() / gridSize)
+            );
+            
+            // 如果該網格尚未有點，則添加
+            if (!pointGrid.containsKey(key)) {
+                pointGrid.put(key, point);
+                result.add(point);
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 空間網格索引鍵，用於快速判斷點是否在同一網格
+     */
+    private static class GridKey {
+        private final double x, y, z;
+        
+        public GridKey(double x, double y, double z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GridKey gridKey = (GridKey) o;
+            return Double.compare(gridKey.x, x) == 0 &&
+                    Double.compare(gridKey.y, y) == 0 &&
+                    Double.compare(gridKey.z, z) == 0;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y, z);
+        }
     }
     
     /**
