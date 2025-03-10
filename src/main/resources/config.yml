@@ -39,9 +39,9 @@ display-modes:
     # Particle spacing (in blocks)
     spacing: 0.5
     # Particle display interval (in ticks)
-    display-interval: 2
+    display-interval: 1
     # Vertical render range (in blocks) - Only render particles within this range above/below the player
-    vertical-render-range: 10
+    vertical-render-range: 7
   
   WALL:
     # Update frequency (in ticks)
