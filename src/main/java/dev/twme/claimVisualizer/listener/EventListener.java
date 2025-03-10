@@ -11,6 +11,7 @@ import org.bukkit.event.player.PlayerLocaleChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
@@ -27,32 +28,40 @@ public class EventListener implements Listener {
         this.renderer = renderer;
     }
 
+    /**
+     * 處理玩家登入事件
+     */
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         // 初始化玩家會話
         PlayerSession session = PlayerSession.getSession(event.getPlayer());
+        // 檢查目標世界是否支援 GriefDefender
+        if (!plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
+            return;
+        }
         
         // 設定玩家語言
         String locale = event.getPlayer().getLocale();
         plugin.getLanguageManager().setPlayerLanguage(event.getPlayer().getUniqueId(), locale);
         session.setLanguage(plugin.getLanguageManager().getPlayerLanguage(event.getPlayer().getUniqueId()));
         
-        // 檢查玩家是否有自動啟用視覺化的權限
-        if (event.getPlayer().hasPermission("claimvisualizer.autoenable") && 
-            event.getPlayer().hasPermission("claimvisualizer.use")) {
-            session.setVisualizationEnabled(true);
-            
-            // 延遲2秒後渲染領地，確保玩家已完全載入
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                if (plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
-                    renderer.renderClaims(event.getPlayer());
-                    
-                    // 發送提示訊息，使用多語言系統
-                    event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.auto_enable", event.getPlayer()));
-                    event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.help.toggle_hint", event.getPlayer()));
-                }
-            }, 40L); // 40 ticks = 2秒
+        // 確認玩家已啟用視覺化，並有權限
+        if (!session.isVisualizationEnabled() || 
+            !event.getPlayer().hasPermission("claimvisualizer.use")) {
+            return;
         }
+        
+        // 使用延遲時間顯示領地
+        int delay = plugin.getConfigManager().getLoginDelay();
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (event.getPlayer().isOnline() && session.isVisualizationEnabled()) {
+                renderer.renderClaims(event.getPlayer());
+
+                // 發送提示訊息，使用多語言系統
+                event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.auto_enable", event.getPlayer()));
+                event.getPlayer().sendMessage(plugin.getLanguageManager().getMessage("command.help.toggle_hint", event.getPlayer()));
+            }
+        }, delay);
     }
 
     @EventHandler
@@ -109,6 +118,33 @@ public class EventListener implements Listener {
         });
     }
 
+    /**
+     * 處理玩家切換世界事件
+     */
+    @EventHandler
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        // 檢查目標世界是否支援 GriefDefender
+        if (!plugin.getClaimManager().isWorldEnabled(event.getPlayer().getWorld())) {
+            return;
+        }
+        
+        PlayerSession session = PlayerSession.getSession(event.getPlayer());
+        
+        // 確認玩家已啟用視覺化，並有權限
+        if (!session.isVisualizationEnabled() || 
+            !event.getPlayer().hasPermission("claimvisualizer.use")) {
+            return;
+        }
+        
+        // 使用延遲時間顯示領地
+        int delay = plugin.getConfigManager().getWorldChangeDelay();
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (event.getPlayer().isOnline() && session.isVisualizationEnabled()) {
+                renderer.renderClaims(event.getPlayer());
+            }
+        }, delay);
+    }
+    
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
         // 檢查目標世界是否支援 GriefDefender
@@ -124,12 +160,15 @@ public class EventListener implements Listener {
             return;
         }
         
+        // 修改：使用設定檔中的世界切換延遲時間
+        int delay = plugin.getConfigManager().getWorldChangeDelay();
+        
         // 傳送後更新領地顯示
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (session.isVisualizationEnabled()) {
                 renderer.renderClaims(event.getPlayer());
             }
-        }, 5L); // 等待5刻以確保玩家已完成傳送
+        }, delay); // 使用設定的延遲時間
     }
     
     @EventHandler

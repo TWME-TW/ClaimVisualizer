@@ -84,6 +84,11 @@ display-modes:
     # 渲染方法開關
     use-raycast-method: true      # 是否使用射線檢測渲染方法
     use-view-angle-method: true   # 是否使用視角偵測渲染方法
+
+# Display delay settings (in ticks, 20 ticks = 1 second)
+display-delay:
+  login: 20      # 玩家登入後延遲顯示的時間
+  world-change: 10  # 玩家切換世界後延遲顯示的時間
   
 # Particle settings for different claim types
 claim-types:

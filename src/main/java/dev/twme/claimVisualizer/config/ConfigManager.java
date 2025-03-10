@@ -41,6 +41,10 @@ public class ConfigManager {
     // 新增：視角效果相關設定
     private double viewAngleEffect = 0.6; // 預設視角效果強度 (0-1)
 
+    // 新增：顯示延遲設定
+    private int loginDelay;
+    private int worldChangeDelay;
+
     public ConfigManager(ClaimVisualizer plugin) {
         this.plugin = plugin;
         loadConfig();
@@ -80,6 +84,10 @@ public class ConfigManager {
         
         // 載入不同領地類型的粒子設定
         loadParticleSettings();
+
+        // 新增：載入延遲顯示設定
+        loginDelay = config.getInt("display-delay.login", 20);
+        worldChangeDelay = config.getInt("display-delay.world-change", 10);
     }
     
     // 新增：載入每種顯示模式的特定設定
@@ -412,6 +420,16 @@ public class ConfigManager {
     public boolean isWallUseViewAngleMethod() {
         DisplayMode mode = DisplayMode.WALL;
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).useViewAngleMethod : true;
+    }
+
+    // 新增：獲取登入延遲時間
+    public int getLoginDelay() {
+        return loginDelay;
+    }
+    
+    // 新增：獲取世界切換延遲時間
+    public int getWorldChangeDelay() {
+        return worldChangeDelay;
     }
 
     public enum DisplayMode {
