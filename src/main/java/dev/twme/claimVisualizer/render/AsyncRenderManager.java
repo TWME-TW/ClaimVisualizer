@@ -98,6 +98,7 @@ public class AsyncRenderManager {
                         boolean waveEffect = configManager.isWallWaveEffect();
                         double waveSpeed = configManager.getWallWaveSpeed();
                         double waveIntensity = configManager.getWallWaveIntensity();
+                        double viewAngleEffect = configManager.getWallViewAngleEffect();
                         
                         // 玩家視線方向向量
                         Vector playerDirection = player.getLocation().getDirection();
@@ -113,8 +114,9 @@ public class AsyncRenderManager {
                         ConfigManager.ParticleSettings cornerSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                                 
-                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(
-                                player.getLocation(), renderDistance, spacing, wallRadius);
+                        // 改為使用射線檢測的方法
+                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithRaycast(
+                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius);
                                 
                         for (ClaimBoundary.WallPoint point : points) {
                             Location loc = point.getLocation();

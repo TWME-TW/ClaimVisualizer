@@ -37,6 +37,9 @@ public class ConfigManager {
     
     // 更新數據結構 - 為每種領地類型儲存不同部分的粒子設定
     private final Map<String, Map<ClaimPart, ParticleSettings>> claimTypeParticles = new HashMap<>();
+    
+    // 新增：視角效果相關設定
+    private double viewAngleEffect = 0.6; // 預設視角效果強度 (0-1)
 
     public ConfigManager(ClaimVisualizer plugin) {
         this.plugin = plugin;
@@ -137,6 +140,7 @@ public class ConfigManager {
                     settings.waveEffect = modeSection.getBoolean("wave-effect", true);
                     settings.waveSpeed = modeSection.getDouble("wave-speed", 1.0);
                     settings.waveIntensity = modeSection.getDouble("wave-intensity", 0.3);
+                    settings.viewAngleEffect = modeSection.getDouble("view-angle-effect", 0.6);
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
                 } else if (mode == DisplayMode.CORNERS) {
@@ -389,6 +393,11 @@ public class ConfigManager {
         DisplayMode mode = DisplayMode.WALL;
         return modeSettings.containsKey(mode) ? modeSettings.get(mode).getWaveIntensity() : 0.3;
     }
+    
+    public double getWallViewAngleEffect() {
+        DisplayMode mode = DisplayMode.WALL;
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).viewAngleEffect : viewAngleEffect;
+    }
 
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
@@ -429,6 +438,7 @@ public class ConfigManager {
         private boolean waveEffect = true;       // 波浪效果
         private double waveSpeed = 1.0;          // 波浪速度
         private double waveIntensity = 0.3;      // 波浪強度
+        public double viewAngleEffect = 0.6;  // 視角效果強度 (0-1)
         
         public int getUpdateInterval() {
             return updateInterval;

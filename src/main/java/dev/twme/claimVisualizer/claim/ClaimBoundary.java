@@ -539,4 +539,44 @@ public class ClaimBoundary {
     public List<WallPoint> getWallModePointsWithCorners(Location playerLocation, int renderDistance, double spacing, double wallRadius) {
         return wallPointGenerator.getWallModePointsWithCorners(playerLocation, renderDistance, spacing, wallRadius);
     }
+
+    /**
+     * 獲取考慮視線角度的 WALL 模式粒子點
+     * @param playerLocation 玩家位置
+     * @param playerDirection 玩家視線方向
+     * @param renderDistance 渲染距離
+     * @param spacing 粒子間距
+     * @param baseRadius 基礎半徑
+     * @param viewAngleEffect 視角影響係數
+     * @return 帶有角落資訊的點列表
+     */
+    public List<WallPoint> getWallModePointsWithViewAngle(
+            Location playerLocation, 
+            Vector playerDirection, 
+            int renderDistance, 
+            double spacing, 
+            double baseRadius,
+            double viewAngleEffect) {
+        return wallPointGenerator.getWallModePointsWithViewAngle(
+            playerLocation, playerDirection, renderDistance, spacing, baseRadius, viewAngleEffect);
+    }
+    
+    /**
+     * 使用射線檢測獲取 WALL 模式下的粒子點
+     * @param playerLocation 玩家位置
+     * @param playerDirection 玩家視線方向
+     * @param renderDistance 渲染距離
+     * @param spacing 粒子間距
+     * @param wallRadius 牆面渲染半徑
+     * @return 帶有角落資訊的點列表
+     */
+    public List<WallPoint> getWallModePointsWithRaycast(
+            Location playerLocation, 
+            Vector playerDirection, 
+            int renderDistance, 
+            double spacing, 
+            double wallRadius) {
+        return wallPointGenerator.getWallModePointsWithRaycast(
+                playerLocation, playerDirection, renderDistance, spacing, wallRadius);
+    }
 }

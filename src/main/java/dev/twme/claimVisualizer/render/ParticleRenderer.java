@@ -174,6 +174,7 @@ public class ParticleRenderer {
                 boolean waveEffect = configManager.isWallWaveEffect();
                 double waveSpeed = configManager.getWallWaveSpeed();
                 double waveIntensity = configManager.getWallWaveIntensity();
+                double viewAngleEffect = configManager.getWallViewAngleEffect();
                 
                 // 玩家視線方向向量
                 Vector playerDirection = player.getLocation().getDirection();
@@ -189,8 +190,9 @@ public class ParticleRenderer {
                 ConfigManager.ParticleSettings cornerSettings = 
                         configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
                 
-                // 使用新的帶角落資訊的牆面點
-                List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(player.getLocation(), renderDistance, spacing, wallRadius);
+                // 使用考慮視線角度的方法獲取點
+                List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithViewAngle(
+                        player.getLocation(), playerDirection, renderDistance, spacing, wallRadius, viewAngleEffect);
                 
                 for (ClaimBoundary.WallPoint point : points) {
                     Location loc = point.getLocation();

@@ -78,6 +78,9 @@ display-modes:
     wave-speed: 1.0
     # Wave intensity - 波浪強度
     wave-intensity: 0.3
+    # 視角效果強度 (0-1)，決定視線中心與邊緣的渲染半徑差異
+    # 0 表示無效果，1 表示視線邊緣的範圍為中心的 0%
+    view-angle-effect: 0.6
   
 # Particle settings for different claim types
 claim-types:
