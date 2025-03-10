@@ -569,4 +569,31 @@ public class ClaimBoundary {
         
         return points;
     }
+    
+    /**
+     * 獲取指定垂直範圍內的邊界點
+     * @param part 領地部分
+     * @param spacing 粒子間距
+     * @param playerY 玩家Y座標
+     * @param verticalRange 垂直渲染範圍
+     * @return 指定範圍內的點列表
+     */
+    public List<Location> getPointsInVerticalRange(ConfigManager.ClaimPart part, double spacing, int playerY, int verticalRange) {
+        List<Location> allPoints = getPointsForPart(part, spacing, playerY);
+        List<Location> filteredPoints = new ArrayList<>();
+        
+        // 計算垂直範圍的上下限
+        int minRenderY = playerY - verticalRange;
+        int maxRenderY = playerY + verticalRange;
+        
+        // 過濾在垂直範圍內的點
+        for (Location loc : allPoints) {
+            int y = loc.getBlockY();
+            if (y >= minRenderY && y <= maxRenderY) {
+                filteredPoints.add(loc);
+            }
+        }
+        
+        return filteredPoints;
+    }
 }
