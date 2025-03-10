@@ -210,14 +210,39 @@ public class ParticleRenderer {
                     }
                 }
             } else if (mode == ConfigManager.DisplayMode.WALL) {
-                ConfigManager.ParticleSettings particleSettings = 
-                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                 // 使用模式特定的牆面半徑
                 double wallRadius = configManager.getRadius(mode);
-                List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, wallRadius);
-                for (Location loc : points) {
-                    if (isInPlayerViewDirection(player, loc)) {
-                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                
+                // 獲取水平和垂直線的粒子設定
+                ConfigManager.ParticleSettings horizontalSettings = 
+                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
+                ConfigManager.ParticleSettings verticalSettings = 
+                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
+                
+                // 使用新的帶角落資訊的牆面點
+                List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(player.getLocation(), renderDistance, spacing, wallRadius);
+                
+                for (ClaimBoundary.WallPoint point : points) {
+                    if (isInPlayerViewDirection(player, point.getLocation())) {
+                        // 根據點的屬性選擇適當的顏色
+                        if (point.isCorner()) {
+                            // 角落點使用頂部框架的顏色
+                            ConfigManager.ParticleSettings cornerSettings = 
+                                    configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                            allParticles.add(new ParticleData(cornerSettings.getParticle(), 
+                                                            point.getLocation(), 
+                                                            cornerSettings.getColor()));
+                        } else if (point.isVertical()) {
+                            // 垂直點使用垂直線的顏色
+                            allParticles.add(new ParticleData(verticalSettings.getParticle(), 
+                                                            point.getLocation(), 
+                                                            verticalSettings.getColor()));
+                        } else {
+                            // 其他點使用水平線的顏色
+                            allParticles.add(new ParticleData(horizontalSettings.getParticle(), 
+                                                            point.getLocation(), 
+                                                            horizontalSettings.getColor()));
+                        }
                     }
                 }
             } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
@@ -298,13 +323,38 @@ public class ParticleRenderer {
                             }
                         }
                     } else if (mode == ConfigManager.DisplayMode.WALL) {
-                        ConfigManager.ParticleSettings particleSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         double wallRadius = configManager.getRadius(mode);
-                        List<Location> points = claim.getWallModePoints(player.getLocation(), renderDistance, spacing, wallRadius);
-                        for (Location loc : points) {
-                            if (isInPlayerViewDirection(player, loc)) {
-                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
+                        
+                        // 獲取水平和垂直線的粒子設定
+                        ConfigManager.ParticleSettings horizontalSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
+                        ConfigManager.ParticleSettings verticalSettings = 
+                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
+                        
+                        // 使用新的帶角落資訊的牆面點
+                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(player.getLocation(), renderDistance, spacing, wallRadius);
+                        
+                        for (ClaimBoundary.WallPoint point : points) {
+                            if (isInPlayerViewDirection(player, point.getLocation())) {
+                                // 根據點的屬性選擇適當的顏色
+                                if (point.isCorner()) {
+                                    // 角落點使用頂部框架的顏色
+                                    ConfigManager.ParticleSettings cornerSettings = 
+                                            configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                                    allParticles.add(new ParticleData(cornerSettings.getParticle(), 
+                                                                    point.getLocation(), 
+                                                                    cornerSettings.getColor()));
+                                } else if (point.isVertical()) {
+                                    // 垂直點使用垂直線的顏色
+                                    allParticles.add(new ParticleData(verticalSettings.getParticle(), 
+                                                                    point.getLocation(), 
+                                                                    verticalSettings.getColor()));
+                                } else {
+                                    // 其他點使用水平線的顏色
+                                    allParticles.add(new ParticleData(horizontalSettings.getParticle(), 
+                                                                    point.getLocation(), 
+                                                                    horizontalSettings.getColor()));
+                                }
                             }
                         }
                     } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
