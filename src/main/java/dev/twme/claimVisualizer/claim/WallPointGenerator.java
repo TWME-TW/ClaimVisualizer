@@ -617,67 +617,17 @@ public class WallPointGenerator {
             
         List<ClaimBoundary.WallPoint> points = new ArrayList<>();
         
-        // 檢查玩家是否在領地內
-        boolean isInside = boundary.isPlayerInside(playerLocation);
+        // 計算射線檢測結果
+        RayIntersection intersection = calculateRayBoxIntersection(playerLocation, playerDirection);
         
-        if (isInside) {
-            // 如果玩家在領地內，使用現有的方法處理
-            List<ClaimBoundary.WallFace> faces = boundary.getIntersectingFaces(playerLocation, renderDistance);
-            for (ClaimBoundary.WallFace face : faces) {
-                // 計算射線方向與面的交點
-                RayIntersection intersection = calculateRayBoxIntersection(playerLocation, playerDirection);
-                
-                if (intersection != null && faces.contains(intersection.getFace())) {
-                    // 使用交點作為渲染中心
-                    points.addAll(getWallPointsInRadiusWithCorners(intersection.getLocation(), wallRadius, intersection.getFace(), spacing));
-                } else {
-                    // 若視線方向無交點或交點不在需要渲染的面上，使用面上最近點
-                    Location nearestPoint = boundary.getNearestPointOnFace(playerLocation, face);
-                    points.addAll(getWallPointsInRadiusWithCorners(nearestPoint, wallRadius, face, spacing));
-                }
-            }
-        } else {
-            // 如果玩家在領地外，使用射線檢測
-            RayIntersection intersection = calculateRayBoxIntersection(playerLocation, playerDirection);
-            
-            if (intersection != null && intersection.getDistance() <= renderDistance) {
-                // 如果有交點且在渲染距離內，使用交點所在的面
-                points.addAll(getWallPointsInRadiusWithCorners(intersection.getLocation(), wallRadius, intersection.getFace(), spacing));
-            } else {
-                // 如果沒有交點或交點太遠，使用玩家與領地最近的面
-                Location nearestPoint = boundary.getNearestPoint(playerLocation);
-                double tolerance = 1.0; // 定義允許偏差
-                Set<ClaimBoundary.WallFace> candidateFaces = new HashSet<>();
-                
-                if (playerLocation.getX() < minX + tolerance) candidateFaces.add(ClaimBoundary.WallFace.WEST);
-                if (playerLocation.getX() > maxX - tolerance) candidateFaces.add(ClaimBoundary.WallFace.EAST);
-                if (playerLocation.getY() < minY + tolerance) candidateFaces.add(ClaimBoundary.WallFace.BOTTOM);
-                if (playerLocation.getY() > maxY - tolerance) candidateFaces.add(ClaimBoundary.WallFace.TOP);
-                if (playerLocation.getZ() < minZ + tolerance) candidateFaces.add(ClaimBoundary.WallFace.NORTH);
-                if (playerLocation.getZ() > maxZ - tolerance) candidateFaces.add(ClaimBoundary.WallFace.SOUTH);
-                
-                if (candidateFaces.isEmpty()) {
-                    double distToWest = Math.abs(nearestPoint.getX() - minX);
-                    double distToEast = Math.abs(nearestPoint.getX() - maxX);
-                    double distToBottom = Math.abs(nearestPoint.getY() - minY);
-                    double distToTop = Math.abs(nearestPoint.getY() - maxY);
-                    double distToNorth = Math.abs(nearestPoint.getZ() - minZ);
-                    double distToSouth = Math.abs(nearestPoint.getZ() - maxZ);
-                    double minDist = Math.min(Math.min(Math.min(distToWest, distToEast), Math.min(distToBottom, distToTop)), Math.min(distToNorth, distToSouth));
-                    
-                    if (minDist == distToWest) candidateFaces.add(ClaimBoundary.WallFace.WEST);
-                    else if (minDist == distToEast) candidateFaces.add(ClaimBoundary.WallFace.EAST);
-                    else if (minDist == distToBottom) candidateFaces.add(ClaimBoundary.WallFace.BOTTOM);
-                    else if (minDist == distToTop) candidateFaces.add(ClaimBoundary.WallFace.TOP);
-                    else if (minDist == distToNorth) candidateFaces.add(ClaimBoundary.WallFace.NORTH);
-                    else if (minDist == distToSouth) candidateFaces.add(ClaimBoundary.WallFace.SOUTH);
-                }
-                
-                for (ClaimBoundary.WallFace face : candidateFaces) {
-                    Location faceCenter = boundary.getNearestPointOnFace(playerLocation, face);
-                    points.addAll(getWallPointsInRadiusWithCorners(faceCenter, wallRadius, face, spacing));
-                }
-            }
+        // 如果有有效的交點且在渲染距離內
+        if (intersection != null && intersection.getDistance() <= renderDistance) {
+            // 使用交點作為渲染中心
+            points.addAll(getWallPointsInRadiusWithCorners(
+                    intersection.getLocation(), 
+                    wallRadius, 
+                    intersection.getFace(), 
+                    spacing));
         }
         
         return points;

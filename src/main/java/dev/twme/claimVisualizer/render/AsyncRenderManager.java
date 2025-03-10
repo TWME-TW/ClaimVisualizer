@@ -113,10 +113,17 @@ public class AsyncRenderManager {
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
                         ConfigManager.ParticleSettings cornerSettings = 
                                 configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
+                        
+                        // 同時獲取兩種渲染方式的點 - 合併渲染效果
+                        List<ClaimBoundary.WallPoint> points = new ArrayList<>();
                                 
-                        // 改為使用射線檢測的方法
-                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithRaycast(
-                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius);
+                        // 使用視線射線檢測的方法
+                        points.addAll(claim.getWallModePointsWithRaycast(
+                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius));
+                                
+                        // 同時使用原來的基於最近點的方法
+                        points.addAll(claim.getWallModePointsWithViewAngle(
+                                player.getLocation(), playerDirection, renderDistance, spacing, wallRadius, viewAngleEffect));
                                 
                         for (ClaimBoundary.WallPoint point : points) {
                             Location loc = point.getLocation();
