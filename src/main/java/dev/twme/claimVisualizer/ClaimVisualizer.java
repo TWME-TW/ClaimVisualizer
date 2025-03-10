@@ -27,7 +27,7 @@ public final class ClaimVisualizer extends JavaPlugin {
         // 初始化領地管理器
         claimManager = new ClaimManager(this);
         
-        // 初始化粒子渲染器
+        // 初始化粒子渲染器 - 此處無需修改，因為AsyncRenderManager在ParticleRenderer內部初始化
         particleRenderer = new ParticleRenderer(this, claimManager);
         
         // 註冊命令
