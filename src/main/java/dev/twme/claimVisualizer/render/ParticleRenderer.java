@@ -234,10 +234,22 @@ public class ParticleRenderer {
                     }
                 }
             } else {
+                // FULL 模式 - 應用垂直渲染範圍限制
+                int verticalRange = configManager.getVerticalRenderRange(mode);
+                
                 for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                     ConfigManager.ParticleSettings particleSettings = 
                             configManager.getParticleSettings(claim.getType(), part);
-                    List<Location> points = claim.getPointsForPart(part, spacing, playerY);
+                    
+                    // 使用新方法獲取垂直範圍內的點
+                    List<Location> points;
+                    if (part == ConfigManager.ClaimPart.TOP || part == ConfigManager.ClaimPart.VERTICAL) {
+                        points = claim.getPointsInVerticalRange(part, spacing, playerY, verticalRange);
+                    } else {
+                        // 對於水平線和底部，使用原始方法
+                        points = claim.getPointsForPart(part, spacing, playerY);
+                    }
+                    
                     for (Location loc : points) {
                         if (isInPlayerViewDirection(player, loc)) {
                             allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
@@ -308,10 +320,22 @@ public class ParticleRenderer {
                             }
                         }
                     } else {
+                        // FULL 模式 - 應用垂直渲染範圍限制
+                        int verticalRange = configManager.getVerticalRenderRange(mode);
+                        
                         for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
                             ConfigManager.ParticleSettings particleSettings = 
                                     configManager.getParticleSettings(claim.getType(), part);
-                            List<Location> points = claim.getPointsForPart(part, spacing, playerY);
+                            
+                            // 使用新方法獲取垂直範圍內的點
+                            List<Location> points;
+                            if (part == ConfigManager.ClaimPart.TOP || part == ConfigManager.ClaimPart.VERTICAL) {
+                                points = claim.getPointsInVerticalRange(part, spacing, playerY, verticalRange);
+                            } else {
+                                // 對於水平線和底部，使用原始方法
+                                points = claim.getPointsForPart(part, spacing, playerY);
+                            }
+                            
                             for (Location loc : points) {
                                 if (isInPlayerViewDirection(player, loc)) {
                                     allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));

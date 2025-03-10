@@ -99,6 +99,8 @@ public class ConfigManager {
                     settings.radius = wallRadius;
                 } else if (mode == DisplayMode.OUTLINE) {
                     settings.radius = outlineRadius;
+                } else if (mode == DisplayMode.FULL) {
+                    settings.verticalRenderRange = 10; // 預設垂直範圍
                 }
                 
                 modeSettings.put(mode, settings);
@@ -131,6 +133,8 @@ public class ConfigManager {
                     settings.radius = modeSection.getDouble("outline-radius", outlineRadius);
                 } else if (mode == DisplayMode.CORNERS) {
                     settings.cornerSize = modeSection.getInt("corner-size", 5);
+                } else if (mode == DisplayMode.FULL) {
+                    settings.verticalRenderRange = modeSection.getInt("vertical-render-range", 10);
                 }
             }
             
@@ -303,6 +307,11 @@ public class ConfigManager {
         return getParticleSettings(claimType, ClaimPart.BOTTOM);
     }
     
+    // 新增：獲取垂直渲染範圍
+    public int getVerticalRenderRange(DisplayMode mode) {
+        return modeSettings.containsKey(mode) ? modeSettings.get(mode).verticalRenderRange : 10;
+    }
+    
     public enum DisplayMode {
         CORNERS, OUTLINE, FULL, WALL
     }
@@ -332,6 +341,7 @@ public class ConfigManager {
         private int displayInterval = 1; // 預設值
         private double radius = 5.0; // 半徑 (用於 WALL 和 OUTLINE 模式)
         private int cornerSize = 5; // 角落大小 (用於 CORNERS 模式)
+        private int verticalRenderRange = 10; // 垂直渲染範圍 (用於 FULL 模式)
         
         public int getUpdateInterval() {
             return updateInterval;
@@ -355,6 +365,10 @@ public class ConfigManager {
         
         public int getCornerSize() {
             return cornerSize;
+        }
+        
+        public int getVerticalRenderRange() {
+            return verticalRenderRange;
         }
     }
     
