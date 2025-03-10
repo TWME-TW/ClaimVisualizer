@@ -31,6 +31,9 @@ public class ParticleRenderer {
     
     // 粒子統計管理器
     private final ParticleStatisticsManager statisticsManager;
+    
+    // 非同步渲染管理器
+    private final AsyncRenderManager asyncRenderManager;
 
     public ParticleRenderer(ClaimVisualizer plugin, ClaimManager claimManager) {
         this.plugin = plugin;
@@ -42,6 +45,9 @@ public class ParticleRenderer {
         
         // 初始化粒子佇列管理器 (使用統計管理器的參考)
         this.queueManager = new ParticleQueueManager(plugin, configManager, statisticsManager);
+        
+        // 初始化非同步渲染管理器
+        this.asyncRenderManager = new AsyncRenderManager(plugin, claimManager, queueManager, statisticsManager);
     }
 
     /**
@@ -248,109 +254,8 @@ public class ParticleRenderer {
      * 非同步渲染領地粒子，使用指定顯示模式
      */
     private void renderClaimsAsync(Player player, ConfigManager.DisplayMode mode) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                Set<ClaimBoundary> claims = claimManager.getNearbyClaims(player);
-                double spacing = configManager.getParticleSpacing(mode);
-                int renderDistance = configManager.getRenderDistance(mode);
-                int playerY = player.getLocation().getBlockY();
-                
-                List<ParticleData> allParticles = new ArrayList<>();
-                
-                for (ClaimBoundary claim : claims) {
-                    if (mode == ConfigManager.DisplayMode.CORNERS) {
-                        ConfigManager.ParticleSettings particleSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                        int cornerSize = configManager.getCornerSize(mode);
-                        List<Location> points = claim.getCornerPoints(cornerSize, playerY);
-                        for (Location loc : points) {
-                            if (isInPlayerViewDirection(player, loc)) {
-                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
-                            }
-                        }
-                    } else if (mode == ConfigManager.DisplayMode.WALL) {
-                        double wallRadius = configManager.getRadius(mode);
-                        
-                        // 獲取水平和垂直線的粒子設定
-                        ConfigManager.ParticleSettings horizontalSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
-                        ConfigManager.ParticleSettings verticalSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.VERTICAL);
-                        
-                        // 使用新的帶角落資訊的牆面點
-                        List<ClaimBoundary.WallPoint> points = claim.getWallModePointsWithCorners(player.getLocation(), renderDistance, spacing, wallRadius);
-                        
-                        for (ClaimBoundary.WallPoint point : points) {
-                            if (isInPlayerViewDirection(player, point.getLocation())) {
-                                // 根據點的屬性選擇適當的顏色
-                                if (point.isCorner()) {
-                                    // 角落點使用頂部框架的顏色
-                                    ConfigManager.ParticleSettings cornerSettings = 
-                                            configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                                    allParticles.add(new ParticleData(cornerSettings.getParticle(), 
-                                                                    point.getLocation(), 
-                                                                    cornerSettings.getColor()));
-                                } else if (point.isVertical()) {
-                                    // 垂直點使用垂直線的顏色
-                                    allParticles.add(new ParticleData(verticalSettings.getParticle(), 
-                                                                    point.getLocation(), 
-                                                                    verticalSettings.getColor()));
-                                } else {
-                                    // 其他點使用水平線的顏色
-                                    allParticles.add(new ParticleData(horizontalSettings.getParticle(), 
-                                                                    point.getLocation(), 
-                                                                    horizontalSettings.getColor()));
-                                }
-                            }
-                        }
-                    } else if (mode == ConfigManager.DisplayMode.OUTLINE) {
-                        double outlineRadius = configManager.getRadius(mode);
-                        List<Location> points = claim.getOutlineNearbyPoints(player.getLocation(), renderDistance, spacing, outlineRadius);
-                        
-                        ConfigManager.ParticleSettings particleSettings = 
-                                configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.HORIZONTAL);
-                                
-                        for (Location loc : points) {
-                            if (isInPlayerViewDirection(player, loc)) {
-                                allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
-                            }
-                        }
-                    } else {
-                        // FULL 模式 - 應用垂直渲染範圍限制
-                        int verticalRange = configManager.getVerticalRenderRange(mode);
-                        
-                        for (ConfigManager.ClaimPart part : ConfigManager.ClaimPart.values()) {
-                            ConfigManager.ParticleSettings particleSettings = 
-                                    configManager.getParticleSettings(claim.getType(), part);
-                            
-                            // 使用新方法獲取垂直範圍內的點
-                            List<Location> points;
-                            if (part == ConfigManager.ClaimPart.TOP || part == ConfigManager.ClaimPart.VERTICAL) {
-                                points = claim.getPointsInVerticalRange(part, spacing, playerY, verticalRange);
-                            } else {
-                                // 對於水平線和底部，使用原始方法
-                                points = claim.getPointsForPart(part, spacing, playerY);
-                            }
-                            
-                            for (Location loc : points) {
-                                if (isInPlayerViewDirection(player, loc)) {
-                                    allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // 切換回主執行緒，將粒子資料加入佇列
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        queueManager.queueParticlesForPlayer(player.getUniqueId(), allParticles, mode);
-                    }
-                }.runTask(plugin);
-            }
-        }.runTaskAsynchronously(plugin);
+        // 委託給非同步渲染管理器
+        asyncRenderManager.renderClaimsAsync(player, mode);
     }
 
     /**
