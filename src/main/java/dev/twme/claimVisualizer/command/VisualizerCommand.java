@@ -154,9 +154,9 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
         session.toggleVisualization();
 
         if (session.isVisualizationEnabled()) {
-            player.sendMessage(languageManager.getMessage("command.on", player));
+            player.sendMessage(languageManager.getMessage("command.turn_on", player));
         } else {
-            player.sendMessage(languageManager.getMessage("command.off", player));
+            player.sendMessage(languageManager.getMessage("command.turn_off", player));
         }
     }
 
@@ -168,23 +168,23 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
 
         PlayerSession session = PlayerSession.getSession(player);
         if (session.isVisualizationEnabled()) {
-            player.sendMessage(languageManager.getMessage("command.already_on", player));
+            player.sendMessage(languageManager.getMessage("command.already_turn_on", player));
             return;
         }
 
         session.setVisualizationEnabled(true);
-        player.sendMessage(languageManager.getMessage("command.on", player));
+        player.sendMessage(languageManager.getMessage("command.turn_on", player));
     }
 
     private void disableVisualization(Player player) {
         PlayerSession session = PlayerSession.getSession(player);
         if (!session.isVisualizationEnabled()) {
-            player.sendMessage(languageManager.getMessage("command.already_off", player));
+            player.sendMessage(languageManager.getMessage("command.already_turn_off", player));
             return;
         }
 
         session.setVisualizationEnabled(false);
-        player.sendMessage(languageManager.getMessage("command.off", player));
+        player.sendMessage(languageManager.getMessage("command.turn_off", player));
     }
 
     private void reloadPlugin(Player player) {
@@ -200,8 +200,8 @@ public class VisualizerCommand implements CommandExecutor, TabCompleter {
     private void sendHelpMessage(Player player) {
         player.sendMessage(languageManager.getMessage("command.help.header", player));
         player.sendMessage(languageManager.getMessage("command.help.toggle", player));
-        player.sendMessage(languageManager.getMessage("command.help.on", player));
-        player.sendMessage(languageManager.getMessage("command.help.off", player));
+        player.sendMessage(languageManager.getMessage("command.help.turn_on", player));
+        player.sendMessage(languageManager.getMessage("command.help.turn_off", player));
         player.sendMessage(languageManager.getMessage("command.help.mode", player));
         
         if (player.hasPermission("claimvisualizer.language")) {
