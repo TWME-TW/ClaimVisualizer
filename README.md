@@ -5,7 +5,7 @@ ClaimVisualizer is a Minecraft server plugin that visualizes claim boundaries cr
 
 ## Features
 - Uses different colored particles to mark different types of claims (basic, admin, subdivision, town)
-- Supports four display modes: corners only (CORNERS), outline only (OUTLINE), complete boundary (FULL), wall surface (WALL)
+- Supports three display modes: outline only (OUTLINE), complete boundary (FULL), wall surface (WALL)
 - Complete 3D claim visualization, including top, bottom, sides, and horizontal lines at player height
 - Each player can individually enable/disable visualization effects and select their preferred display mode
 - Highly customizable settings including particle types, colors, density, and update frequency
@@ -27,7 +27,7 @@ ClaimVisualizer is a Minecraft server plugin that visualizes claim boundaries cr
 - `/claimvisual` or `/cv` or `/claimviz` - Toggle claim visualization on/off
 - `/claimvisual on` - Enable claim visualization
 - `/claimvisual off` - Disable claim visualization
-- `/claimvisual mode <mode>` - Set particle display mode (CORNERS, OUTLINE, FULL, WALL)
+- `/claimvisual mode <mode>` - Set particle display mode (OUTLINE, FULL, WALL)
 - `/claimvisual reload` - Reload plugin configuration
 - `/claimvisual help` - Show help message
 
@@ -95,7 +95,7 @@ performance:
 #### Display Settings
 ```yaml
 display:
-  # Display mode: CORNERS (corner only), OUTLINE (outline only), FULL (complete boundary), WALL (wall surface)
+  # Display mode: OUTLINE (outline only), FULL (complete boundary), WALL (wall surface)
   mode: OUTLINE
   # Show own claims
   show-own-claims: true
@@ -112,7 +112,6 @@ display:
 ```
 
 ## Display Modes Explained
-- **CORNERS**: Only shows the corners of the claim, most performance-friendly
 - **OUTLINE**: Only shows the claim outline near the player, suitable for general use
 - **FULL**: Shows the complete claim boundary, including all edges
 - **WALL**: Shows particles in a wall style when player is near a claim, most intuitive
@@ -129,7 +128,7 @@ display:
    - Decrease the `render-distance`
    - Increase `spacing` for particles
    - Reduce `max-claims` to limit simultaneous claim rendering
-   - Use CORNERS or OUTLINE display mode
+   - Use OUTLINE display mode
 
 3. **Want to change particle colors?**
    - Modify the color values for the corresponding claim type in the `claim-types` section of the config file

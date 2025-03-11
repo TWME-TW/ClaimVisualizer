@@ -150,19 +150,7 @@ public class ParticleRenderer {
         List<ParticleData> allParticles = new ArrayList<>();
         
         for (ClaimBoundary claim : claims) {
-            if (mode == ConfigManager.DisplayMode.CORNERS) {
-                ConfigManager.ParticleSettings particleSettings = 
-                        configManager.getParticleSettings(claim.getType(), ConfigManager.ClaimPart.TOP);
-                // 使用模式特定的角落大小
-                int cornerSize = configManager.getCornerSize(mode);
-                List<Location> points = claim.getCornerPoints(cornerSize, playerY);
-                for (Location loc : points) {
-                    // 只收集在玩家視野內的粒子
-                    if (isInPlayerViewDirection(player, loc)) {
-                        allParticles.add(new ParticleData(particleSettings.getParticle(), loc, particleSettings.getColor()));
-                    }
-                }
-            } else if (mode == ConfigManager.DisplayMode.WALL) {
+            if (mode == ConfigManager.DisplayMode.WALL) {
                 // 使用模式特定的牆面半徑
                 double wallRadius = configManager.getRadius(mode);
                 
